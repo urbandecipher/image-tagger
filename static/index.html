@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ImageTag Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Theme tokens ── */
+[data-theme="dark"] {
+  --bg:       #111113;
+  --surface:  #18181b;
+  --surface2: #1f1f23;
+  --surface3: #28282e;
+  --border:   #2e2e36;
+  --border2:  #3a3a45;
+  --accent:   #7c6aff;
+  --accent-h: #9d8fff;
+  --accent-s: rgba(124,106,255,0.15);
+  --text:     #f0f0f4;
+  --text2:    #a0a0b0;
+  --text3:    #606070;
+  --tag-bg:   #1e1e28;
+  --tag-act:  #7c6aff;
+  --sug-bg:   #1f1f27;
+  --red:      #ff6b6b;
+  --red-s:    rgba(255,107,107,0.12);
+  --teal:     #2dd4bf;
+  --shadow:   0 4px 24px rgba(0,0,0,0.4);
+}
+[data-theme="light"] {
+  --bg:       #f4f4f7;
+  --surface:  #ffffff;
+  --surface2: #f0f0f4;
+  --surface3: #e8e8ef;
+  --border:   #dcdce6;
+  --border2:  #c8c8d8;
+  --accent:   #5b4de0;
+  --accent-h: #7060f0;
+  --accent-s: rgba(91,77,224,0.1);
+  --text:     #1a1a2e;
+  --text2:    #5a5a78;
+  --text3:    #9090a8;
+  --tag-bg:   #eeeef8;
+  --tag-act:  #5b4de0;
+  --sug-bg:   #ffffff;
+  --red:      #e03535;
+  --red-s:    rgba(224,53,53,0.08);
+  --teal:     #0d9488;
+  --shadow:   0 4px 24px rgba(0,0,0,0.10);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+body {
+  font-family:'Inter',sans-serif;
+  background:var(--bg);color:var(--text);
+  display:grid;
+  grid-template-columns:290px 1fr;
+  grid-template-rows:52px 1fr;
+  grid-template-areas:"header header" "sidebar main";
+  height:100vh;overflow:hidden;
+  transition:background 0.25s,color 0.25s;
+}
+
+/* ── Header ── */
+header {
+  grid-area:header;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 18px;gap:12px;
+}
+.logo {
+  font-size:14px;font-weight:600;
+  display:flex;align-items:center;gap:7px;
+  color:var(--text);white-space:nowrap;
+}
+.logo-dot {
+  width:7px;height:7px;border-radius:50%;
+  background:var(--accent);box-shadow:0 0 8px var(--accent);
+}
+.header-sep{flex:1;}
+.stat-pill {
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  color:var(--text2);background:var(--surface2);
+  border:1px solid var(--border);border-radius:20px;
+  padding:3px 10px;display:flex;align-items:center;gap:4px;white-space:nowrap;
+}
+.stat-pill b{color:var(--accent);font-weight:500;}
+
+.icon-btn {
+  width:32px;height:32px;border-radius:8px;border:1px solid var(--border);
+  background:var(--surface2);color:var(--text2);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:15px;transition:all 0.15s;flex-shrink:0;
+}
+.icon-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* ── Sidebar ── */
+.sidebar {
+  grid-area:sidebar;background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.sidebar-top{flex-shrink:0;}
+.sidebar-scroll{flex:1;overflow-y:auto;}
+.sidebar-scroll::-webkit-scrollbar{width:3px;}
+.sidebar-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+.s-section{padding:12px 14px;border-bottom:1px solid var(--border);}
+.s-label{font-size:10px;font-weight:600;letter-spacing:1px;color:var(--text3);
+  text-transform:uppercase;margin-bottom:7px;}
+
+/* inputs */
+input[type="text"]{
+  width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:7px;color:var(--text);font-family:'Inter',sans-serif;
+  font-size:13px;padding:7px 10px;outline:none;transition:border-color 0.2s;
+}
+input[type="text"]:focus{border-color:var(--accent);}
+input[type="text"]::placeholder{color:var(--text3);}
+
+/* buttons */
+.btn {
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  font-family:'Inter',sans-serif;font-size:13px;font-weight:500;
+  border:none;border-radius:7px;cursor:pointer;
+  transition:all 0.15s;padding:7px 12px;white-space:nowrap;
+}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent-h);}
+.btn-ghost{background:var(--surface2);color:var(--text2);border:1px solid var(--border);}
+.btn-ghost:hover{background:var(--surface3);color:var(--text);border-color:var(--border2);}
+.btn-danger{background:var(--red-s);color:var(--red);border:1px solid transparent;}
+.btn-danger:hover{border-color:var(--red);}
+.btn:disabled{opacity:0.38;cursor:not-allowed;}
+.btn-full{width:100%;}
+
+/* range */
+.range-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);}
+input[type="range"]{flex:1;accent-color:var(--accent);height:3px;}
+.range-val{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);min-width:28px;}
+
+/* progress */
+.prog-wrap{margin-top:8px;display:none;}
+.prog-wrap.show{display:block;}
+.prog-track{height:3px;background:var(--surface3);border-radius:2px;overflow:hidden;margin-bottom:5px;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--teal));
+  border-radius:2px;transition:width 0.4s;width:0%;}
+.prog-text{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3);
+  display:flex;justify-content:space-between;}
+
+/* ── Tag categories ── */
+.sidebar-cat-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 14px 4px;border-bottom:1px solid var(--border);
+  position:sticky;top:0;background:var(--surface);z-index:2;
+}
+.cat-ctrl-label{font-size:10px;font-weight:600;letter-spacing:1px;color:var(--text3);text-transform:uppercase;}
+.cat-ctrl-btns{display:flex;gap:4px;}
+.cat-ctrl-btn{
+  font-size:10px;padding:2px 8px;border-radius:4px;
+  border:1px solid var(--border);background:transparent;
+  color:var(--text3);cursor:pointer;transition:all 0.15s;
+  font-family:'Inter',sans-serif;
+}
+.cat-ctrl-btn:hover{border-color:var(--border2);color:var(--text);}
+.cat-block{padding:8px 14px;border-bottom:1px solid var(--border);}
+.cat-header{display:flex;align-items:center;gap:6px;cursor:pointer;
+  user-select:none;padding:2px 0;border-radius:5px;}
+.cat-header:hover .cat-title{color:var(--text);}
+.cat-title{font-size:10px;font-weight:600;letter-spacing:0.8px;color:var(--text2);
+  text-transform:uppercase;flex:1;transition:color 0.15s;}
+.cat-count{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text3);
+  background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:1px 6px;}
+.cat-arrow{font-size:9px;color:var(--text3);transition:transform 0.2s;}
+.cat-arrow.open{transform:rotate(90deg);}
+.cat-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px;
+  overflow:hidden;transition:max-height 0.3s ease,margin-top 0.3s;max-height:2000px;}
+.cat-tags.collapsed{max-height:0;margin-top:0;}
+
+.tag-chip {
+  font-family:'JetBrains Mono',monospace;
+  background:var(--tag-bg);border:1px solid var(--border);
+  border-radius:6px;padding:4px 8px;cursor:pointer;
+  transition:all 0.15s;color:var(--text2);
+  display:flex;flex-direction:column;align-items:flex-start;gap:1px;
+  line-height:1.2;
+}
+.tag-chip:hover{background:var(--surface3);color:var(--text);border-color:var(--border2);}
+.tag-chip.active{background:var(--accent-s);border-color:var(--accent);color:var(--accent);}
+.chip-en{font-size:10px;font-weight:500;}
+.chip-zh{font-size:9px;opacity:0.6;}
+.chip-n{font-size:9px;opacity:0.45;margin-top:1px;}
+
+/* ── Main ── */
+main{grid-area:main;display:flex;flex-direction:column;overflow:hidden;}
+
+.toolbar{
+  padding:8px 14px;background:var(--surface);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;
+}
+.search-wrap{flex:1;position:relative;}
+.search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);
+  color:var(--text3);pointer-events:none;font-size:12px;}
+.search-wrap input{padding-left:30px;font-size:13px;}
+.search-suggestions{
+  position:absolute;top:calc(100% + 4px);left:0;right:0;
+  background:var(--sug-bg);border:1px solid var(--border);
+  border-radius:8px;z-index:60;max-height:220px;overflow-y:auto;
+  display:none;box-shadow:var(--shadow);
+}
+.search-suggestions.show{display:block;}
+.sug-item{padding:7px 11px;cursor:pointer;font-size:12px;
+  display:flex;align-items:center;gap:8px;transition:background 0.1s;}
+.sug-item:hover{background:var(--surface2);}
+.sug-en{font-family:'JetBrains Mono',monospace;color:var(--text);font-size:11px;}
+.sug-zh{color:var(--text2);font-size:11px;}
+.sug-n{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);}
+
+.fchip{
+  font-size:12px;padding:5px 11px;border-radius:20px;
+  border:1px solid var(--border);background:transparent;
+  color:var(--text2);cursor:pointer;font-family:'Inter',sans-serif;
+  transition:all 0.15s;white-space:nowrap;
+}
+.fchip.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.fchip:hover:not(.active){border-color:var(--border2);color:var(--text);}
+
+/* gallery */
+.gallery{
+  flex:1;overflow-y:auto;padding:14px;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));
+  gap:10px;align-content:start;
+}
+.gallery::-webkit-scrollbar{width:5px;}
+.gallery::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;overflow:hidden;cursor:pointer;
+  transition:all 0.18s;position:relative;
+}
+.card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow);}
+.card-img{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:var(--surface2);}
+.card-body{padding:6px 7px;}
+.card-tags{display:flex;flex-wrap:wrap;gap:3px;max-height:36px;overflow:hidden;}
+.mini-tag{
+  font-family:'JetBrains Mono',monospace;font-size:9px;
+  background:var(--surface2);border-radius:4px;
+  padding:2px 5px;color:var(--text3);white-space:nowrap;
+}
+.ubadge{
+  position:absolute;top:5px;right:5px;font-size:9px;
+  background:var(--red);color:#fff;border-radius:4px;
+  padding:2px 5px;font-weight:600;
+}
+
+.pagination{
+  padding:7px 14px;border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--surface);gap:8px;flex-wrap:wrap;
+}
+.page-info{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;white-space:nowrap;}
+.page-btns{display:flex;gap:4px;align-items:center;flex-wrap:wrap;}
+.page-num-btn{
+  min-width:28px;height:28px;padding:0 6px;border-radius:6px;
+  border:1px solid var(--border);background:transparent;
+  color:var(--text2);cursor:pointer;font-family:'JetBrains Mono',monospace;
+  font-size:11px;display:flex;align-items:center;justify-content:center;
+  transition:all 0.15s;
+}
+.page-num-btn:hover{border-color:var(--border2);color:var(--text);}
+.page-num-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.page-num-btn.ellipsis{border:none;cursor:default;color:var(--text3);}
+.page-jump{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3);}
+.page-jump input{
+  width:44px;padding:4px 6px;font-size:11px;text-align:center;
+  font-family:'JetBrains Mono',monospace;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:6px;color:var(--text);outline:none;
+}
+.page-jump input:focus{border-color:var(--accent);}
+
+/* ── Detail panel ── */
+.det-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.5);
+  z-index:100;display:none;backdrop-filter:blur(6px);
+}
+.det-overlay.open{display:flex;justify-content:flex-end;}
+.det-panel{
+  width:420px;background:var(--surface);border-left:1px solid var(--border);
+  height:100%;display:flex;flex-direction:column;overflow:hidden;
+  animation:slideIn 0.2s ease;box-shadow:-8px 0 32px rgba(0,0,0,0.2);
+}
+@keyframes slideIn{from{transform:translateX(24px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+
+.det-img-wrap{position:relative;background:var(--bg);flex-shrink:0;}
+.det-img{width:100%;max-height:280px;object-fit:contain;display:block;}
+.det-close{
+  position:absolute;top:8px;right:8px;
+  background:rgba(0,0,0,0.55);border:none;color:#fff;
+  width:26px;height:26px;border-radius:50%;cursor:pointer;
+  font-size:14px;display:flex;align-items:center;justify-content:center;
+  transition:background 0.15s;
+}
+.det-close:hover{background:rgba(0,0,0,0.85);}
+
+.det-body{flex:1;overflow-y:auto;padding:13px;}
+.det-body::-webkit-scrollbar{width:4px;}
+.det-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+.det-path-row{
+  display:flex;align-items:flex-start;gap:6px;margin-bottom:12px;
+}
+.det-path{
+  flex:1;font-family:'JetBrains Mono',monospace;font-size:10px;
+  color:var(--text2);word-break:break-all;line-height:1.6;
+}
+.reveal-btn{
+  flex-shrink:0;width:26px;height:26px;border-radius:6px;
+  border:1px solid var(--border);background:var(--surface2);
+  color:var(--text2);cursor:pointer;font-size:13px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.15s;margin-top:1px;
+}
+.reveal-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+.det-tags-wrap{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:11px;}
+.edit-tag{
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:6px;padding:4px 8px;color:var(--text);
+  display:flex;align-items:center;gap:4px;line-height:1.2;
+}
+.edit-tag-en{font-size:10px;}
+.edit-tag-zh{font-size:9px;color:var(--text2);margin-left:2px;}
+.edit-tag .del{cursor:pointer;color:var(--text3);font-size:13px;
+  line-height:1;transition:color 0.15s;margin-left:2px;}
+.edit-tag .del:hover{color:var(--red);}
+
+.add-row{display:flex;gap:7px;margin-bottom:11px;}
+.add-row input{flex:1;}
+
+.det-footer{
+  padding:10px 13px;border-top:1px solid var(--border);
+  display:flex;gap:7px;background:var(--surface);
+}
+
+/* empty */
+.empty{
+  grid-column:1/-1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:60px 20px;color:var(--text3);gap:10px;font-size:14px;
+}
+.empty-icon{font-size:34px;opacity:0.35;}
+
+/* toast */
+.toast{
+  position:fixed;bottom:20px;right:20px;background:var(--surface);
+  border:1px solid var(--border);border-radius:8px;padding:10px 15px;
+  font-size:13px;color:var(--text);z-index:999;
+  animation:fadeUp 0.3s ease;max-width:300px;box-shadow:var(--shadow);
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+/* loading */
+#lov{position:fixed;inset:0;background:var(--bg);display:flex;
+  flex-direction:column;align-items:center;justify-content:center;z-index:200;gap:14px;transition:opacity 0.4s;}
+#lov.hidden{opacity:0;pointer-events:none;}
+.spinner{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--accent);
+  border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.s-hint{padding:16px;text-align:center;color:var(--text3);font-size:12px;}
+</style>
+</head>
+<body>
+
+<div id="lov"><div class="spinner"></div><div style="font-size:13px;color:var(--text3)" data-i18n="loading">載入中...</div></div>
+
+<header>
+  <div class="logo"><div class="logo-dot"></div>ImageTag Studio</div>
+  <div class="header-sep"></div>
+  <div class="stat-pill" id="pill-total">總計 <b id="stat-total">0</b> 張</div>
+  <div class="stat-pill" id="pill-untagged">未標記 <b id="stat-untagged">0</b> 張</div>
+  <div class="icon-btn" onclick="toggleTheme()" id="theme-btn" title="切換亮/暗">🌙</div>
+  <div class="icon-btn" onclick="toggleLang()" id="lang-btn" title="切換語言" style="font-size:12px;font-weight:600;">EN</div>
+</header>
+
+<div class="sidebar">
+  <div class="sidebar-top">
+    <div class="s-section">
+      <div class="s-label" data-i18n="folder-label">圖片資料夾</div>
+      <input type="text" id="folder-input" placeholder="C:\Users\...\images" style="margin-bottom:7px">
+      <button class="btn btn-ghost btn-full" onclick="scanFolder()">
+        <span>🔍</span><span data-i18n="scan-btn">掃描資料夾</span>
+      </button>
+    </div>
+    <div class="s-section">
+      <div class="s-label" data-i18n="tag-settings-label">自動打標設定</div>
+      <div class="range-row" style="margin-bottom:9px">
+        <span data-i18n="threshold-label">信心閾值</span>
+        <input type="range" id="threshold" min="0.1" max="0.9" step="0.05" value="0.35"
+               oninput="document.getElementById('thresh-val').textContent=parseFloat(this.value).toFixed(2)">
+        <span class="range-val" id="thresh-val">0.35</span>
+      </div>
+      <button class="btn btn-primary btn-full" id="tag-btn" onclick="startTagging()">
+        <span>⚡</span><span data-i18n="start-tag-btn">開始打標</span>
+      </button>
+      <div class="prog-wrap" id="prog-wrap">
+        <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
+        <div class="prog-text"><span id="prog-cur">—</span><span id="prog-pct">0%</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="sidebar-cat-header">
+    <span class="cat-ctrl-label" data-i18n="tags-section">Tags</span>
+    <div class="cat-ctrl-btns">
+      <button class="cat-ctrl-btn" onclick="collapseAllCats()" data-i18n="collapse-all">全部收合</button>
+      <button class="cat-ctrl-btn" onclick="expandAllCats()" data-i18n="expand-all">全部展開</button>
+    </div>
+  </div>
+  <div class="sidebar-scroll" id="tag-categories">
+    <div class="s-hint" data-i18n="scan-hint">掃描後顯示 Tags</div>
+  </div>
+</div>
+
+<main>
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input type="text" id="search-input" placeholder="搜索 tag 或輸入中文，逗號分隔...">
+      <div class="search-suggestions" id="sug-box"></div>
+    </div>
+    <button class="fchip" id="untagged-filter" onclick="toggleUntagged()" data-i18n="untagged-filter">未標記</button>
+    <button class="btn btn-ghost" onclick="refreshGallery()" data-i18n="refresh-btn">重整</button>
+  </div>
+
+  <div class="gallery" id="gallery">
+    <div class="empty"><div class="empty-icon">🖼</div><div data-i18n="empty-hint">輸入資料夾路徑並掃描以開始</div></div>
+  </div>
+
+  <div class="pagination">
+    <div class="page-info" id="page-info">— / —</div>
+    <div class="page-btns" id="page-btns"></div>
+    <div class="page-jump">
+      <span data-i18n="goto-page">跳至</span>
+      <input type="number" id="page-jump-input" min="1" value="1">
+      <button class="cat-ctrl-btn" onclick="jumpToPage()" data-i18n="goto-btn">GO</button>
+    </div>
+  </div>
+</main>
+
+<!-- Detail -->
+<div class="det-overlay" id="det-overlay" onclick="closeDetail(event)">
+  <div class="det-panel" onclick="event.stopPropagation()">
+    <div class="det-img-wrap">
+      <img class="det-img" id="det-img" src="" alt="">
+      <button class="det-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="det-body">
+      <div class="det-path-row">
+        <div class="det-path" id="det-path"></div>
+        <button class="reveal-btn" onclick="revealInExplorer()" title="在檔案總管中開啟">📂</button>
+      </div>
+      <div class="s-label" style="margin-bottom:8px" data-i18n="tags-label">Tags</div>
+      <div class="det-tags-wrap" id="det-tags"></div>
+      <div class="add-row">
+        <input type="text" id="new-tag-input" data-i18n-ph="add-tag-ph" placeholder="新增 tag...">
+        <button class="btn btn-ghost" onclick="addTag()">＋</button>
+      </div>
+    </div>
+    <div class="det-footer">
+      <button class="btn btn-primary" style="flex:1" onclick="saveTags()">
+        <span>💾</span><span data-i18n="save-btn">儲存</span>
+      </button>
+      <button class="btn btn-danger" onclick="deleteImage()">🗑</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Tag translations ───────────────────────────────────────────────────────────
+const TAG_ZH = {
+  '1girl':'1女','2girls':'2女','3girls':'3女','multiple girls':'多女','1boy':'1男',
+  '2boys':'2男','multiple boys':'多男','solo':'獨照','solo focus':'主角',
+  'crowd':'人群','chibi':'Q版','robot':'機器人','android':'機械人',
+  'long hair':'長髮','short hair':'短髮','medium hair':'中髮','very long hair':'超長髮',
+  'black hair':'黑髮','brown hair':'棕髮','blonde hair':'金髮','white hair':'白髮',
+  'silver hair':'銀髮','grey hair':'灰髮','blue hair':'藍髮','green hair':'綠髮',
+  'red hair':'紅髮','pink hair':'粉髮','purple hair':'紫髮','orange hair':'橙髮',
+  'teal hair':'青髮','multicolored hair':'多色髮','gradient hair':'漸層髮',
+  'twintails':'雙馬尾','ponytail':'馬尾','braid':'辮子','hair bun':'髮髻',
+  'ahoge':'呆毛','bangs':'瀏海','parted bangs':'分瀏海','hair between eyes':'眉間髮',
+  'hair ornament':'髮飾','hairband':'髮帶','hair flower':'髮花',
+  'hair over shoulder':'垂肩髮','curly hair':'捲髮','wavy hair':'波浪髮',
+  'straight hair':'直髮','side ponytail':'側馬尾','low twintails':'低雙馬',
+  'single hair bun':'單髮髻','hair over one eye':'單眼遮髮',
+  'smile':'微笑','grin':'咧嘴笑','laugh':'笑','cry':'哭','tears':'淚水',
+  'blush':'臉紅','frown':'皺眉','angry':'憤怒','sad':'悲傷','surprised':'驚訝',
+  'shocked':'震驚','embarrassed':'害羞','expressionless':'無表情',
+  'open mouth':'開嘴','closed mouth':'閉嘴','parted lips':'微開唇',
+  'tongue':'舌頭','teeth':'牙齒','wink':'眨眼','half-closed eyes':'半閉眼',
+  'closed eyes':'閉眼','looking at viewer':'注視觀者','looking away':'望向他處',
+  'looking back':'回頭看','looking up':'抬頭看','looking down':'低頭看',
+  'red eyes':'紅眼','blue eyes':'藍眼','green eyes':'綠眼','brown eyes':'棕眼',
+  'purple eyes':'紫眼','grey eyes':'灰眼','yellow eyes':'黃眼','black eyes':'黑眼',
+  'pink eyes':'粉眼','aqua eyes':'水藍眼','heterochromia':'異色瞳',
+  'lips':'嘴唇','nose':'鼻子','earrings':'耳環','portrait':'人像',
+  'dress':'裙裝','skirt':'裙子','shirt':'上衣','jacket':'夾克','coat':'外套',
+  'uniform':'制服','suit':'西裝','swimsuit':'泳衣','bikini':'比基尼',
+  'shorts':'短褲','pants':'長褲','jeans':'牛仔褲','leggings':'內搭褲',
+  'stockings':'絲襪','thighhighs':'大腿襪','socks':'襪子','shoes':'鞋子',
+  'boots':'靴子','heels':'高跟鞋','hat':'帽子','cap':'鴨舌帽',
+  'ribbon':'緞帶','bow':'蝴蝶結','tie':'領帶','scarf':'圍巾',
+  'gloves':'手套','necklace':'項鍊','bracelet':'手鍊','ring':'戒指',
+  'jewelry':'珠寶','armor':'盔甲','weapon':'武器','sword':'劍','gun':'槍',
+  'mask':'面具','glasses':'眼鏡','sunglasses':'太陽眼鏡','hairpin':'髮夾',
+  'kimono':'和服','yukata':'浴衣','maid':'女僕','school uniform':'學生制服',
+  'sailor':'水手服','apron':'圍裙','cloak':'斗篷','hoodie':'帽T',
+  'sweater':'毛衣','sleeveless':'無袖','bare shoulders':'裸肩',
+  'collar':'衣領','choker':'頸圈','belt':'腰帶','lace':'蕾絲','frills':'荷葉邊',
+  'bra':'胸罩','off shoulder':'露肩','crop top':'短版上衣',
+  'standing':'站立','sitting':'坐姿','lying':'臥姿','kneeling':'跪姿',
+  'running':'奔跑','walking':'行走','jumping':'跳躍','floating':'飄浮',
+  'crouching':'蹲下','leaning':'倚靠','arms up':'舉手',
+  'hand on hip':'手叉腰','crossed arms':'交叉手臂','v sign':'比V',
+  'upper body':'上半身','lower body':'下半身','full body':'全身',
+  'close-up':'近距離','cowboy shot':'牛仔構圖','bust':'胸上',
+  'from above':'俯視','from below':'仰視','from behind':'從後','from side':'側面',
+  'dutch angle':'斜角','profile':'側臉','head tilt':'歪頭',
+  'simple background':'簡單背景','white background':'白色背景',
+  'black background':'黑色背景','grey background':'灰色背景',
+  'blue background':'藍色背景','pink background':'粉色背景',
+  'gradient background':'漸層背景','outdoors':'戶外','indoors':'室內',
+  'sky':'天空','clouds':'雲朵','forest':'森林','trees':'樹木','grass':'草地',
+  'flowers':'花朵','garden':'花園','beach':'海灘','ocean':'海洋','water':'水',
+  'city':'城市','urban':'都市','street':'街道','building':'建築',
+  'room':'房間','bedroom':'臥室','school':'學校','office':'辦公室',
+  'night':'夜晚','day':'白天','sunset':'夕陽','sunrise':'日出',
+  'rain':'雨','snow':'雪','fog':'霧','cherry blossom':'櫻花',
+  'space':'宇宙','stars':'星星','moon':'月亮','sun':'太陽',
+  'bokeh':'散景','blurry background':'模糊背景','depth of field':'景深','blurry':'模糊',
+  'realistic':'寫實','anime':'動漫','semi-realistic':'半寫實',
+  'sketch':'素描','lineart':'線稿','watercolor':'水彩','oil painting':'油畫',
+  'masterpiece':'傑作','best quality':'最高品質','high quality':'高品質',
+  'ultra detailed':'超細緻','detailed':'細緻','highres':'高解析',
+  'monochrome':'單色','greyscale':'灰階','colorful':'彩色','pastel':'粉彩',
+  'cinematic':'電影感','dramatic lighting':'戲劇光影','soft lighting':'柔和光線',
+  'backlighting':'逆光','shadow':'陰影',
+  'chair':'椅子','breasts':'胸部','large breasts':'大胸','small breasts':'小胸',
+  'cleavage':'乳溝','midriff':'腰部','navel':'肚臍','bare arms':'裸臂',
+  'thighs':'大腿','legs':'腿部','hand':'手','nail polish':'指甲油',
+  'tattoo':'刺青','mole':'痣','cat ears':'貓耳','fox ears':'狐耳',
+  'animal ears':'獸耳','tail':'尾巴','wings':'翅膀','halo':'光環',
+  'horns':'角','headphones':'耳機','flower':'花','rose':'玫瑰',
+  'food':'食物','cup':'杯子','phone':'手機','umbrella':'雨傘',
+  'scenery':'風景','motor vehicle':'機動車','car':'汽車','road':'道路',
+  'sign':'標誌','power lines':'電線','crosswalk':'斑馬線','sidewalk':'人行道',
+  'road sign':'路牌','people':'人群','mole under eye':'眼下痣',
+  'blue shirt':'藍色上衣','yellow hairband':'黃色髮帶','denim':'牛仔布',
+};
+const ZH_TO_EN={};
+Object.entries(TAG_ZH).forEach(([en,zh])=>{ZH_TO_EN[zh]=en;});
+function getZh(en){return TAG_ZH[en.toLowerCase()]||'';}
+function resolveTag(s){const t=s.trim();return ZH_TO_EN[t]||t;}
+
+// ── i18n ──────────────────────────────────────────────────────────────────────
+const I18N={
+  zh:{
+    'loading':'載入中...','folder-label':'圖片資料夾','scan-btn':'掃描資料夾',
+    'tag-settings-label':'自動打標設定','threshold-label':'信心閾值',
+    'start-tag-btn':'開始打標','scan-hint':'掃描後顯示 Tags',
+    'search-placeholder':'搜索 tag 或輸入中文，逗號分隔多個...',
+    'untagged-filter':'未標記','refresh-btn':'重整',
+    'empty-hint':'輸入資料夾路徑並掃描以開始','empty-search':'找不到符合條件的圖片',
+    'prev-btn':'‹ 上一頁','next-btn':'下一頁 ›','tags-label':'Tags',
+    'add-tag-ph':'新增 tag...','save-btn':'儲存',
+    'stat-total':'總計 {n} 張','stat-untagged':'未標記 {n} 張',
+    'page-info':'第 {page} / {pages} 頁　共 {total} 張',
+    'no-tags':'無 tag 資料',
+    'del-confirm':'從資料庫移除此圖片記錄？（不刪除實際檔案）',
+    'saved':'✅ 已儲存','tag-done':'✅ 打標完成！共 {n} 張',
+    'scan-done':'✅ 掃描完成：共 {total} 張，新增 {new} 張，未標記 {untagged} 張',
+    'err-no-folder':'請輸入資料夾路徑','err-scan-first':'請先掃描資料夾',
+    'cat-character':'👤 人物','cat-hair':'💇 髮型髮色','cat-face':'👁️ 五官表情',
+    'cat-clothing':'👗 服裝配飾','cat-pose':'🤸 姿勢構圖','cat-background':'🌄 場景背景',
+    'cat-style':'✨ 畫風品質','cat-other':'📌 其他',
+    'reveal-tip':'在檔案總管中顯示',
+    'tags-section':'Tags 分類',
+    'collapse-all':'全收',
+    'expand-all':'全展',
+    'goto-page':'跳至',
+    'goto-btn':'GO',
+  },
+  en:{
+    'loading':'Loading...','folder-label':'Image Folder','scan-btn':'Scan Folder',
+    'tag-settings-label':'Auto-Tag Settings','threshold-label':'Threshold',
+    'start-tag-btn':'Start Tagging','scan-hint':'Scan to show Tags',
+    'search-placeholder':'Search tags or type Chinese, comma to separate...',
+    'untagged-filter':'Untagged','refresh-btn':'Refresh',
+    'empty-hint':'Enter folder path and scan to begin','empty-search':'No images found',
+    'prev-btn':'‹ Prev','next-btn':'Next ›','tags-label':'Tags',
+    'add-tag-ph':'Add tag...','save-btn':'Save',
+    'stat-total':'Total {n}','stat-untagged':'Untagged {n}',
+    'page-info':'Page {page}/{pages}  {total} images',
+    'no-tags':'No tag data',
+    'del-confirm':'Remove from database? (File will not be deleted)',
+    'saved':'✅ Saved','tag-done':'✅ Tagging done! {n} images',
+    'scan-done':'✅ Scanned: {total} total, {new} new, {untagged} untagged',
+    'err-no-folder':'Please enter folder path','err-scan-first':'Please scan a folder first',
+    'cat-character':'👤 Character','cat-hair':'💇 Hair','cat-face':'👁️ Face & Expression',
+    'cat-clothing':'👗 Clothing','cat-pose':'🤸 Pose & Composition',
+    'cat-background':'🌄 Scene & Background','cat-style':'✨ Style & Quality','cat-other':'📌 Other',
+    'reveal-tip':'Reveal in Explorer',
+    'tags-section':'Tag Categories',
+    'collapse-all':'Collapse',
+    'expand-all':'Expand',
+    'goto-page':'Go to',
+    'goto-btn':'GO',
+  }
+};
+let lang=localStorage.getItem('lang')||'zh';
+function t(key,vars){
+  let s=(I18N[lang]||I18N.zh)[key]||key;
+  if(vars)Object.keys(vars).forEach(k=>{s=s.replaceAll('{'+k+'}',vars[k]);});
+  return s;
+}
+function applyI18n(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent=t(el.dataset.i18n));
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>el.placeholder=t(el.dataset.i18nPh));
+  document.getElementById('lang-btn').textContent=lang==='zh'?'EN':'中文';
+  document.getElementById('search-input').placeholder=t('search-placeholder');
+  refreshStats_ui();
+}
+function toggleLang(){lang=lang==='zh'?'en':'zh';localStorage.setItem('lang',lang);applyI18n();renderTagCategories(window._allTags||[]);}
+
+// ── Theme ─────────────────────────────────────────────────────────────────────
+let theme=localStorage.getItem('theme')||'dark';
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme',theme);
+  document.getElementById('theme-btn').textContent=theme==='dark'?'🌙':'☀️';
+}
+function toggleTheme(){theme=theme==='dark'?'light':'dark';localStorage.setItem('theme',theme);applyTheme();}
+applyTheme();
+
+// ── Tag Categories ────────────────────────────────────────────────────────────
+const TAG_CATS=[
+  {key:'cat-character',kw:['1girl','2girls','3girls','1boy','2boys','solo','multiple girls','multiple boys','crowd','chibi','robot','android','solo focus']},
+  {key:'cat-hair',kw:['hair','twintails','ponytail','braid','bun','ahoge','bangs','blonde','black hair','brown hair','red hair','white hair','silver hair','blue hair','green hair','pink hair','purple hair','orange hair','grey hair','teal hair','multicolored hair','gradient hair']},
+  {key:'cat-face',kw:['smile','grin','laugh','cry','tears','blush','frown','angry','sad','surprised','shocked','expressionless','eyes','mouth','lips','nose','looking at viewer','looking away','looking back','looking up','looking down','closed eyes','open mouth','closed mouth','parted lips','tongue','teeth','wink','heterochromia','red eyes','blue eyes','green eyes','brown eyes','purple eyes','grey eyes','yellow eyes','black eyes','pink eyes','aqua eyes','glowing eyes','earrings','portrait']},
+  {key:'cat-clothing',kw:['dress','skirt','shirt','jacket','coat','uniform','suit','swimsuit','bikini','shorts','pants','jeans','leggings','stockings','thighhighs','socks','shoes','boots','heels','hat','cap','ribbon','bow','tie','scarf','gloves','necklace','bracelet','ring','jewelry','armor','weapon','sword','gun','mask','glasses','sunglasses','hairpin','kimono','yukata','maid','school uniform','sailor','apron','cloak','hoodie','sweater','sleeveless','bare shoulders','collar','choker','belt','lace','frills','lingerie','bra']},
+  {key:'cat-pose',kw:['standing','sitting','lying','kneeling','running','walking','jumping','floating','crouching','leaning','arms up','hand on hip','crossed arms','v sign','peace sign','pointing','upper body','lower body','full body','close-up','cowboy shot','bust','from above','from below','from behind','from side','dutch angle','profile','head tilt']},
+  {key:'cat-background',kw:['background','simple background','white background','black background','grey background','outdoors','indoors','sky','clouds','forest','trees','grass','flowers','garden','beach','ocean','sea','water','city','urban','street','building','room','bedroom','school','office','night','day','sunset','sunrise','rain','snow','fog','cherry blossom','space','stars','moon','sun','bokeh','blurry background','depth of field','scenery']},
+  {key:'cat-style',kw:['realistic','anime','semi-realistic','3d','cg','sketch','lineart','watercolor','oil painting','digital art','masterpiece','best quality','high quality','ultra detailed','detailed','absurdres','highres','monochrome','greyscale','colorful','pastel','cinematic','dramatic lighting','soft lighting','backlighting','rim light','shadow']},
+];
+function categorizeTag(tag){
+  const l=tag.toLowerCase();
+  for(const cat of TAG_CATS){if(cat.kw.some(k=>l.includes(k)||k.includes(l)))return cat.key;}
+  return 'cat-other';
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let S={page:1,perPage:60,total:0,query:'',untaggedOnly:false,folder:'',
+  detail:null,detailTags:[],progressTimer:null,catOpen:{},statTotal:0,statUntagged:0};
+
+async function api(method,path,body){
+  const opts={method,headers:{'Content-Type':'application/json'}};
+  if(body)opts.body=JSON.stringify(body);
+  const r=await fetch(path,opts);
+  if(!r.ok){const tx=await r.text();throw new Error(tx);}
+  return r.json();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init(){
+  applyI18n();
+  try{
+    const cfg=await api('GET','/api/config');
+    if(cfg.threshold){
+      document.getElementById('threshold').value=cfg.threshold;
+      document.getElementById('thresh-val').textContent=parseFloat(cfg.threshold).toFixed(2);
+    }
+    if(cfg.last_folder){
+      S.folder=cfg.last_folder;
+      document.getElementById('folder-input').value=cfg.last_folder;
+      await refreshGallery();await loadTagCategories();await refreshStats();
+    }
+  }catch(e){console.warn('Init:',e);}
+  const ov=document.getElementById('lov');
+  ov.classList.add('hidden');setTimeout(()=>ov.remove(),500);
+}
+
+async function refreshStats(){
+  try{const s=await api('GET','/api/stats');S.statTotal=s.total;S.statUntagged=s.untagged;refreshStats_ui();}catch(e){}
+}
+function refreshStats_ui(){
+  document.getElementById('pill-total').innerHTML=t('stat-total',{n:`<b id="stat-total">${S.statTotal}</b>`});
+  document.getElementById('pill-untagged').innerHTML=t('stat-untagged',{n:`<b id="stat-untagged">${S.statUntagged}</b>`});
+}
+function updateStats(total,untagged){S.statTotal=total;S.statUntagged=untagged;refreshStats_ui();}
+
+// ── Scan ──────────────────────────────────────────────────────────────────────
+async function scanFolder(){
+  const folder=document.getElementById('folder-input').value.trim();
+  if(!folder)return toast(t('err-no-folder'));
+  S.folder=folder;
+  try{const res=await api('POST','/api/scan',{folder});
+    toast(t('scan-done',{total:res.total,new:res.new,untagged:res.untagged}));
+    updateStats(res.total,res.untagged);refreshGallery();loadTagCategories();
+  }catch(e){toast('❌ '+e.message);}
+}
+
+// ── Tagging ───────────────────────────────────────────────────────────────────
+async function startTagging(){
+  if(!S.folder)return toast(t('err-scan-first'));
+  const threshold=parseFloat(document.getElementById('threshold').value);
+  try{await api('POST','/api/tag',{folder:S.folder,threshold,batch_size:8});
+    document.getElementById('tag-btn').disabled=true;
+    document.getElementById('prog-wrap').classList.add('show');
+    S.progressTimer=setInterval(pollProgress,1000);
+  }catch(e){toast('❌ '+e.message);}
+}
+async function pollProgress(){
+  try{const p=await api('GET','/api/tag/progress');
+    const pct=p.total>0?Math.round(p.done/p.total*100):0;
+    document.getElementById('prog-fill').style.width=pct+'%';
+    document.getElementById('prog-pct').textContent=pct+'%';
+    document.getElementById('prog-cur').textContent=p.current?p.current.slice(-26):`${p.done}/${p.total}`;
+    if(!p.running){clearInterval(S.progressTimer);document.getElementById('tag-btn').disabled=false;
+      document.getElementById('prog-wrap').classList.remove('show');
+      toast(t('tag-done',{n:p.done}));refreshGallery();loadTagCategories();refreshStats();}
+  }catch(e){}
+}
+
+// ── Tag Categories ────────────────────────────────────────────────────────────
+async function loadTagCategories(){
+  const tags=await api('GET','/api/tags/all');
+  window._allTags=tags;renderTagCategories(tags);
+}
+function renderTagCategories(tags){
+  const c=document.getElementById('tag-categories');
+  if(!tags.length){c.innerHTML=`<div class="s-hint">${t('no-tags')}</div>`;return;}
+  const groups={};TAG_CATS.forEach(x=>groups[x.key]=[]);groups['cat-other']=[];
+  tags.forEach(item=>{const k=categorizeTag(item.tag);(groups[k]||(groups[k]=[])).push(item);});
+  const allCats=[...TAG_CATS.map(x=>x.key),'cat-other'];
+  const defOpen=['cat-character','cat-hair','cat-face'];
+  c.innerHTML=allCats.map(catKey=>{
+    const items=groups[catKey]||[];if(!items.length)return'';
+    const isOpen=S.catOpen[catKey]!==undefined?S.catOpen[catKey]:defOpen.includes(catKey);
+    return`<div class="cat-block">
+      <div class="cat-header" onclick="toggleCat('${catKey}')">
+        <span class="cat-title">${t(catKey)}</span>
+        <span class="cat-count">${items.length}</span>
+        <span class="cat-arrow ${isOpen?'open':''}" id="arrow-${catKey}">›</span>
+      </div>
+      <div class="cat-tags ${isOpen?'':'collapsed'}" id="cattags-${catKey}">
+        ${items.map(item=>{const zh=getZh(item.tag);
+          return`<div class="tag-chip" data-tag="${item.tag}" onclick="clickTagChip(this,'${item.tag.replace(/'/g,"\\'")}')">
+            <span class="chip-en">${item.tag}</span>
+            ${zh?`<span class="chip-zh">${zh}</span>`:''}
+            <span class="chip-n">${item.count}</span>
+          </div>`;}).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleCat(k){
+  const el=document.getElementById('cattags-'+k),ar=document.getElementById('arrow-'+k);
+  if(!el)return;const o=!el.classList.contains('collapsed');
+  el.classList.toggle('collapsed',o);ar.classList.toggle('open',!o);S.catOpen[k]=!o;
+}
+function collapseAllCats(){
+  document.querySelectorAll('.cat-tags').forEach(el=>{
+    const k=el.id.replace('cattags-','');
+    el.classList.add('collapsed');
+    const ar=document.getElementById('arrow-'+k);
+    if(ar)ar.classList.remove('open');
+    S.catOpen[k]=false;
+  });
+}
+function expandAllCats(){
+  document.querySelectorAll('.cat-tags').forEach(el=>{
+    const k=el.id.replace('cattags-','');
+    el.classList.remove('collapsed');
+    const ar=document.getElementById('arrow-'+k);
+    if(ar)ar.classList.add('open');
+    S.catOpen[k]=true;
+  });
+}
+function clickTagChip(el,tag){
+  document.querySelectorAll(`.tag-chip[data-tag="${tag}"]`).forEach(c=>c.classList.toggle('active'));
+  const active=[...new Set([...document.querySelectorAll('.tag-chip.active')].map(c=>c.dataset.tag))];
+  document.getElementById('search-input').value=active.join(',');
+  S.page=1;refreshGallery();hideSug();
+}
+
+// ── Search ────────────────────────────────────────────────────────────────────
+const si=document.getElementById('search-input'),sb=document.getElementById('sug-box');
+si.addEventListener('input',()=>{
+  clearTimeout(window._st);showSug();
+  window._st=setTimeout(()=>{S.page=1;refreshGallery();},400);
+});
+si.addEventListener('keydown',e=>{if(e.key==='Escape')hideSug();});
+document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))hideSug();});
+
+function getTerms(){return si.value.split(',').map(s=>resolveTag(s)).filter(Boolean);}
+
+function showSug(){
+  const parts=si.value.split(','),last=parts[parts.length-1].trim();
+  if(!last||!window._allTags){hideSug();return;}
+  const ll=last.toLowerCase();
+  const m=(window._allTags||[]).filter(item=>{
+    const zh=getZh(item.tag);
+    return item.tag.includes(ll)||zh.includes(last);
+  }).slice(0,8);
+  if(!m.length){hideSug();return;}
+  sb.innerHTML=m.map(item=>{const zh=getZh(item.tag);
+    return`<div class="sug-item" onclick="applySug('${item.tag.replace(/'/g,"\\'")}')">
+      <span class="sug-en">${item.tag}</span>
+      ${zh?`<span class="sug-zh">${zh}</span>`:''}
+      <span class="sug-n">${item.count}</span>
+    </div>`;}).join('');
+  sb.classList.add('show');
+}
+function hideSug(){sb.classList.remove('show');}
+function applySug(tag){
+  const parts=si.value.split(',');parts[parts.length-1]=tag;si.value=parts.join(',');
+  hideSug();
+  document.querySelectorAll('.tag-chip').forEach(c=>{if(c.dataset.tag===tag)c.classList.add('active');});
+  S.page=1;refreshGallery();
+}
+
+// ── Gallery ───────────────────────────────────────────────────────────────────
+async function refreshGallery(){
+  const query=getTerms().join(',');
+  const params=new URLSearchParams({query,page:S.page,per_page:S.perPage,untagged_only:S.untaggedOnly});
+  try{const res=await api('GET',`/api/images?${params}`);
+    S.total=res.total;renderGallery(res.images);renderPagination(res.total);
+  }catch(e){toast('❌ '+e.message);}
+}
+function renderGallery(images){
+  const el=document.getElementById('gallery');
+  if(!images.length){el.innerHTML=`<div class="empty"><div class="empty-icon">🔍</div><div>${t('empty-search')}</div></div>`;return;}
+  el.innerHTML=images.map(img=>`
+    <div class="card" onclick="openDetail(${img.id})">
+      <img class="card-img" src="/api/thumb/${img.id}" loading="lazy" alt="">
+      ${!img.tagged?`<div class="ubadge">${t('untagged-filter')}</div>`:''}
+      <div class="card-body"><div class="card-tags">
+        ${img.tags.slice(0,7).map(tg=>`<span class="mini-tag">${tg}</span>`).join('')}
+      </div></div>
+    </div>`).join('');
+}
+function renderPagination(total){
+  const pages=Math.ceil(total/S.perPage)||1;
+  document.getElementById('page-info').textContent=t('page-info',{page:S.page,pages,total});
+  // jump input
+  const ji=document.getElementById('page-jump-input');
+  if(ji){ji.max=pages;ji.value=S.page;}
+
+  // build page number buttons
+  const btns=document.getElementById('page-btns');
+  if(!btns)return;
+  const cur=S.page;
+  let nums=[];
+  // always show first, last, current±2, with ellipsis
+  const show=new Set([1,pages]);
+  for(let i=Math.max(1,cur-2);i<=Math.min(pages,cur+2);i++)show.add(i);
+  const sorted=[...show].sort((a,b)=>a-b);
+  let prev=0;
+  sorted.forEach(n=>{
+    if(n-prev>1)nums.push('...');
+    nums.push(n);
+    prev=n;
+  });
+
+  btns.innerHTML=
+    `<button class="page-num-btn" onclick="changePage(-1)" ${cur<=1?'disabled':''}>‹</button>`+
+    nums.map(n=>n==='...'
+      ?`<span class="page-num-btn ellipsis">…</span>`
+      :`<button class="page-num-btn ${n===cur?'active':''}" onclick="goToPage(${n})">${n}</button>`
+    ).join('')+
+    `<button class="page-num-btn" onclick="changePage(1)" ${cur>=pages?'disabled':''}>›</button>`;
+}
+function changePage(d){goToPage(S.page+d);}
+function goToPage(n){
+  const pages=Math.ceil(S.total/S.perPage)||1;
+  S.page=Math.max(1,Math.min(pages,n));
+  refreshGallery();document.getElementById('gallery').scrollTop=0;
+}
+function jumpToPage(){
+  const v=parseInt(document.getElementById('page-jump-input').value);
+  if(!isNaN(v))goToPage(v);
+}
+document.getElementById('page-jump-input').addEventListener('keydown',e=>{if(e.key==='Enter')jumpToPage();});
+function toggleUntagged(){
+  S.untaggedOnly=!S.untaggedOnly;
+  document.getElementById('untagged-filter').classList.toggle('active',S.untaggedOnly);
+  S.page=1;refreshGallery();
+}
+
+// ── Detail ────────────────────────────────────────────────────────────────────
+async function openDetail(id){
+  const img=await api('GET',`/api/image/${id}`);
+  S.detail=img;S.detailTags=[...img.tags];
+  document.getElementById('det-img').src=`/api/full/${id}`;
+  document.getElementById('det-path').textContent=img.path;
+  document.querySelector('.reveal-btn').title=t('reveal-tip');
+  renderDetTags();
+  document.getElementById('det-overlay').classList.add('open');
+}
+function renderDetTags(){
+  document.getElementById('det-tags').innerHTML=S.detailTags.map((tg,i)=>{
+    const zh=getZh(tg);
+    return`<div class="edit-tag">
+      <span class="edit-tag-en">${tg}</span>
+      ${zh?`<span class="edit-tag-zh">${zh}</span>`:''}
+      <span class="del" onclick="removeTag(${i})">×</span>
+    </div>`;}).join('');
+}
+function removeTag(i){S.detailTags.splice(i,1);renderDetTags();}
+function addTag(){
+  const input=document.getElementById('new-tag-input');
+  const val=resolveTag(input.value).toLowerCase().replace(/\s+/g,' ');
+  if(!val)return;
+  if(!S.detailTags.includes(val)){S.detailTags.push(val);renderDetTags();}
+  input.value='';
+}
+document.getElementById('new-tag-input').addEventListener('keydown',e=>{if(e.key==='Enter')addTag();});
+
+async function saveTags(){
+  if(!S.detail)return;
+  await api('PUT','/api/image/tags',{image_id:S.detail.id,tags:S.detailTags});
+  toast(t('saved'));closeDetail();refreshGallery();loadTagCategories();
+}
+async function deleteImage(){
+  if(!S.detail)return;
+  if(!confirm(t('del-confirm')))return;
+  await api('DELETE','/api/image',{image_id:S.detail.id});
+  closeDetail();refreshGallery();
+}
+async function revealInExplorer(){
+  if(!S.detail)return;
+  try{await api('GET',`/api/reveal/${S.detail.id}`);}
+  catch(e){toast('❌ '+e.message);}
+}
+function closeDetail(e){
+  if(e&&e.target!==document.getElementById('det-overlay'))return;
+  document.getElementById('det-overlay').classList.remove('open');S.detail=null;
+}
+
+function toast(msg){
+  const el=document.createElement('div');el.className='toast';el.textContent=msg;
+  document.body.appendChild(el);setTimeout(()=>el.remove(),3500);
+}
+
+init();
+</script>
+</body>
+</html>

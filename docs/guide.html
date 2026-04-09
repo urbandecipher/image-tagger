@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ImageTag Studio · 使用教程</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f0f12;--surface:#18181c;--surface2:#1f1f26;--border:#2a2a36;
+  --accent:#7c6aff;--accent2:#a78bfa;--teal:#2dd4bf;
+  --text:#f0f0f4;--text2:#a0a0b0;--text3:#60607a;
+  --red:#ff6b6b;--radius:10px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:15px;}
+
+/* Nav */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  background:rgba(15,15,18,0.85);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 40px;height:56px;gap:32px;
+}
+.nav-logo{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;color:var(--text);text-decoration:none;}
+.nav-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);}
+.nav-links{display:flex;gap:24px;margin-left:auto;}
+.nav-links a{font-size:13px;color:var(--text2);text-decoration:none;transition:color 0.15s;}
+.nav-links a:hover{color:var(--text);}
+
+/* Layout */
+.container{max-width:860px;margin:0 auto;padding:100px 24px 80px;}
+
+/* Hero */
+.hero{text-align:center;padding:60px 0 80px;}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;
+  color:var(--accent2);background:rgba(124,106,255,0.1);
+  border:1px solid rgba(124,106,255,0.2);border-radius:20px;
+  padding:4px 12px;margin-bottom:24px;
+}
+.hero h1{font-size:48px;font-weight:700;letter-spacing:-1.5px;line-height:1.1;margin-bottom:16px;}
+.hero h1 span{
+  background:linear-gradient(135deg,var(--accent),var(--teal));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.hero p{font-size:17px;color:var(--text2);max-width:520px;margin:0 auto;}
+
+/* Section */
+section{margin-bottom:72px;}
+.section-num{
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  color:var(--accent);font-weight:500;letter-spacing:1px;
+  margin-bottom:8px;display:block;
+}
+h2{font-size:26px;font-weight:600;letter-spacing:-0.5px;margin-bottom:8px;}
+.section-desc{color:var(--text2);margin-bottom:32px;font-size:14px;}
+
+/* Steps */
+.steps{display:flex;flex-direction:column;gap:16px;}
+.step{
+  display:flex;gap:20px;align-items:flex-start;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:20px 22px;
+  transition:border-color 0.2s;
+}
+.step:hover{border-color:rgba(124,106,255,0.3);}
+.step-num{
+  width:32px;height:32px;border-radius:8px;
+  background:rgba(124,106,255,0.12);border:1px solid rgba(124,106,255,0.2);
+  color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:500;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.step-content h3{font-size:15px;font-weight:600;margin-bottom:4px;}
+.step-content p{font-size:13px;color:var(--text2);line-height:1.6;}
+
+/* Code block */
+.code-block{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;margin:16px 0;
+}
+.code-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px;border-bottom:1px solid var(--border);
+  background:var(--surface2);
+}
+.code-label{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;}
+.copy-btn{
+  font-size:11px;color:var(--text3);background:none;border:none;
+  cursor:pointer;padding:2px 8px;border-radius:4px;transition:all 0.15s;
+}
+.copy-btn:hover{background:var(--surface);color:var(--text);}
+pre{padding:16px;font-family:'JetBrains Mono',monospace;font-size:12px;
+  line-height:1.7;overflow-x:auto;color:var(--text2);}
+pre .c{color:var(--text3);}
+pre .k{color:var(--accent2);}
+pre .s{color:var(--teal);}
+
+/* Feature grid */
+.feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.feature-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:18px 20px;
+  transition:border-color 0.2s;
+}
+.feature-card:hover{border-color:rgba(124,106,255,0.3);}
+.feature-icon{font-size:22px;margin-bottom:10px;}
+.feature-card h3{font-size:14px;font-weight:600;margin-bottom:4px;}
+.feature-card p{font-size:12px;color:var(--text2);line-height:1.6;}
+
+/* Table */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin:16px 0;}
+table{width:100%;border-collapse:collapse;}
+thead tr{background:var(--surface2);}
+th{padding:10px 16px;text-align:left;font-size:12px;font-weight:600;color:var(--text2);letter-spacing:0.5px;text-transform:uppercase;}
+td{padding:10px 16px;font-size:13px;color:var(--text2);border-top:1px solid var(--border);}
+td:first-child{font-family:'JetBrains Mono',monospace;color:var(--accent2);font-size:12px;}
+tr:hover td{background:var(--surface2);}
+
+/* Tips */
+.tip{
+  display:flex;gap:12px;align-items:flex-start;
+  background:rgba(124,106,255,0.06);border:1px solid rgba(124,106,255,0.15);
+  border-radius:var(--radius);padding:14px 16px;margin:16px 0;
+}
+.tip-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.tip p{font-size:13px;color:var(--text2);line-height:1.6;}
+.tip strong{color:var(--text);}
+
+.warn{
+  background:rgba(255,107,107,0.06);border-color:rgba(255,107,107,0.15);
+}
+.warn .tip-icon{filter:none;}
+
+/* FAQ */
+.faq{display:flex;flex-direction:column;gap:1px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.faq-item{background:var(--surface);}
+.faq-q{
+  padding:16px 20px;font-size:14px;font-weight:500;cursor:pointer;
+  display:flex;justify-content:space-between;align-items:center;
+  transition:background 0.15s;user-select:none;
+}
+.faq-q:hover{background:var(--surface2);}
+.faq-arrow{color:var(--text3);transition:transform 0.2s;font-size:12px;}
+.faq-item.open .faq-arrow{transform:rotate(90deg);}
+.faq-a{font-size:13px;color:var(--text2);line-height:1.7;
+  max-height:0;overflow:hidden;transition:max-height 0.3s ease,padding 0.3s;}
+.faq-item.open .faq-a{max-height:300px;padding:0 20px 16px;}
+
+/* Footer */
+footer{border-top:1px solid var(--border);padding:32px 0;text-align:center;color:var(--text3);font-size:12px;}
+footer a{color:var(--accent2);text-decoration:none;}
+
+/* Inline code */
+code{
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:4px;padding:1px 6px;color:var(--accent2);
+}
+
+@media(max-width:640px){
+  .feature-grid{grid-template-columns:1fr;}
+  .hero h1{font-size:32px;}
+  nav{padding:0 20px;}
+  .container{padding:80px 16px 60px;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="#">
+    <div class="nav-dot"></div>
+    ImageTag Studio
+  </a>
+  <div class="nav-links">
+    <a href="#install">安裝</a>
+    <a href="#usage">使用</a>
+    <a href="#search">搜索</a>
+    <a href="#faq">FAQ</a>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-badge">📖 使用教程</div>
+    <h1>讓 AI 幫你整理<br><span>上萬張圖片</span></h1>
+    <p>ImageTag Studio 是一個完全本地運行的圖片打標工具，<br>無需網路、無需 API Key，保護你的隱私。</p>
+  </div>
+
+  <!-- Install -->
+  <section id="install">
+    <span class="section-num">01 · 安裝</span>
+    <h2>安裝與啟動</h2>
+    <p class="section-desc">首次設定只需幾分鐘，之後雙擊即可開啟。</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h3>下載專案</h3>
+          <p>從 GitHub 下載 ZIP 並解壓縮，或使用 git clone。</p>
+          <div class="code-block">
+            <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">複製</button></div>
+            <pre>git clone https://github.com/your-username/image-tagger.git
+cd image-tagger</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h3>建立虛擬環境並安裝依賴</h3>
+          <p>建議使用虛擬環境隔離套件，避免與其他 Python 專案衝突。</p>
+          <div class="code-block">
+            <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">複製</button></div>
+            <pre>python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h3>啟動應用程式</h3>
+          <p>雙擊 <code>start.bat</code>，或在終端機執行以下指令。首次啟動會自動下載 AI 模型（約 200 MB）。</p>
+          <div class="code-block">
+            <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">複製</button></div>
+            <pre>.\start.bat</pre>
+          </div>
+          <div class="tip" style="margin-top:12px">
+            <span class="tip-icon">💡</span>
+            <p>啟動後瀏覽器會<strong>自動開啟</strong> <code>http://localhost:8000</code>，之後每次雙擊 <code>start.bat</code> 即可。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h3>（選用）打包為 .exe</h3>
+          <p>如果希望雙擊 exe 直接啟動，不需要開終端機：</p>
+          <div class="code-block">
+            <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">複製</button></div>
+            <pre>pip install pyinstaller
+python build.py
+<span class="c"># 完成後在 dist/ 資料夾找到 ImageTagStudio.exe</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Usage -->
+  <section id="usage">
+    <span class="section-num">02 · 使用</span>
+    <h2>基本使用流程</h2>
+    <p class="section-desc">三個步驟完成從掃描到搜索的完整工作流程。</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">①</div>
+        <div class="step-content">
+          <h3>掃描資料夾</h3>
+          <p>在左側「圖片資料夾」欄位輸入你的圖片路徑（支援子資料夾遞迴掃描），點「掃描資料夾」。系統會找出所有 JPG、PNG、WebP、GIF、BMP 圖片並建立索引。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">②</div>
+        <div class="step-content">
+          <h3>AI 自動打標</h3>
+          <p>調整信心閾值（預設 0.35），點「開始打標」。AI 會分析每張圖片並生成 tag，進度條顯示完成狀況。打標完成後 tag 永久儲存，重新啟動不會遺失。</p>
+          <div class="tip">
+            <span class="tip-icon">⚡</span>
+            <p><strong>信心閾值說明：</strong>數值越高，tag 越少但越精準；數值越低，tag 越多但可能有噪音。建議從 0.35 開始，視結果調整。</p>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">③</div>
+        <div class="step-content">
+          <h3>搜索與瀏覽</h3>
+          <p>打標完成後，左側會顯示分類 Tag 面板，點選 tag 即可篩選。也可以在搜索框輸入關鍵字，支援英文和中文搜索。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tip warn" style="margin-top:24px">
+      <span class="tip-icon">⚠️</span>
+      <p><strong>注意：</strong>已打標的圖片不會重複處理。若需重新打標，可在 Detail 面板手動編輯，或刪除 <code>tags.db</code> 重新開始。</p>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features">
+    <span class="section-num">03 · 功能</span>
+    <h2>介面功能說明</h2>
+    <p class="section-desc">各區域的功能一覽。</p>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🏷️</div>
+        <h3>Tag 分類面板</h3>
+        <p>左側 Tag 以人物、髮型、表情、服裝、場景、畫風等分類展示，支援一鍵全收合/全展開。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔍</div>
+        <h3>智慧搜索</h3>
+        <p>輸入時自動彈出建議，支援中英文輸入，逗號分隔多個條件進行組合搜索。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">✏️</div>
+        <h3>手動編輯 Tag</h3>
+        <p>點擊任意圖片開啟 Detail 面板，可新增、刪除 tag，支援輸入中文自動轉換。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📂</div>
+        <h3>開啟原始位置</h3>
+        <p>Detail 面板中點擊 📂 按鈕，直接在 Windows 檔案總管中選中並顯示該圖片。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📄</div>
+        <h3>分頁瀏覽</h3>
+        <p>底部顯示頁碼按鈕，可直接點選跳頁，或使用「跳至」輸入框快速前往指定頁。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🌙</div>
+        <h3>亮/暗主題</h3>
+        <p>右上角點擊 🌙/☀️ 切換主題，偏好自動記憶，中英文介面同樣支援切換。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Search -->
+  <section id="search">
+    <span class="section-num">04 · 搜索</span>
+    <h2>搜索技巧</h2>
+    <p class="section-desc">善用搜索功能，快速找到你想要的圖片。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>輸入</th><th>效果</th></tr></thead>
+        <tbody>
+          <tr><td>brown hair</td><td>搜索含有「棕色頭髮」tag 的圖片</td></tr>
+          <tr><td>棕髮</td><td>自動轉換為 brown hair 搜索</td></tr>
+          <tr><td>smile,outdoors</td><td>同時符合「微笑」AND「戶外」</td></tr>
+          <tr><td>1girl,long hair,blue hair</td><td>多條件組合篩選</td></tr>
+          <tr><td>（點擊左側 Tag）</td><td>直接套用該 tag 篩選，可多選</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tip">
+      <span class="tip-icon">💡</span>
+      <p>搜索框輸入時會<strong>自動彈出建議清單</strong>，顯示匹配的 tag 和出現次數，點選即套用。</p>
+    </div>
+
+    <h3 style="margin:24px 0 12px;font-size:16px;">常用中文搜索對照</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>中文</th><th>英文 tag</th><th>中文</th><th>英文 tag</th></tr></thead>
+        <tbody>
+          <tr><td>長髮</td><td>long hair</td><td>微笑</td><td>smile</td></tr>
+          <tr><td>短髮</td><td>short hair</td><td>臉紅</td><td>blush</td></tr>
+          <tr><td>馬尾</td><td>ponytail</td><td>戶外</td><td>outdoors</td></tr>
+          <tr><td>雙馬尾</td><td>twintails</td><td>夜晚</td><td>night</td></tr>
+          <tr><td>黑髮</td><td>black hair</td><td>上半身</td><td>upper body</td></tr>
+          <tr><td>白髮</td><td>white hair</td><td>全身</td><td>full body</td></tr>
+          <tr><td>制服</td><td>uniform</td><td>寫實</td><td>realistic</td></tr>
+          <tr><td>眼鏡</td><td>glasses</td><td>動漫</td><td>anime</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <span class="section-num">05 · FAQ</span>
+    <h2>常見問題</h2>
+    <p class="section-desc">遇到問題先看這裡。</p>
+
+    <div class="faq">
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          啟動後瀏覽器沒有自動開啟？
+          <span class="faq-arrow">›</span>
+        </div>
+        <div class="faq-a">手動開啟瀏覽器並輸入 <code>http://localhost:8000</code>。如果顯示無法連線，請確認終端機視窗中伺服器是否已成功啟動（看到「WD-Tagger 模型載入完成」字樣）。</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          打標速度很慢？
+          <span class="faq-arrow">›</span>
+        </div>
+        <div class="faq-a">目前使用 CPU 模式。若有 NVIDIA GPU，可安裝 CUDA 12.x 並重新安裝 onnxruntime-gpu，速度可提升 10-20 倍。詳見 README.md 的 GPU 加速說明。</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          搜索 tag 找不到圖片？
+          <span class="faq-arrow">›</span>
+        </div>
+        <div class="faq-a">確認圖片已完成打標（左側顯示「未標記 0」）。若仍無法搜索，執行 <code>python fix_tags.py</code> 修復資料庫格式，再重啟應用程式。</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          如何完全重新打標？
+          <span class="faq-arrow">›</span>
+        </div>
+        <div class="faq-a">刪除 <code>tags.db</code> 和 <code>thumbnails/</code> 資料夾，重新啟動後掃描資料夾，再點「開始打標」即可。</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          更換電腦後資料還在嗎？
+          <span class="faq-arrow">›</span>
+        </div>
+        <div class="faq-a">所有 tag 資料儲存在 <code>tags.db</code>，將整個 image-tagger 資料夾複製到新電腦即可，圖片路徑需相同才能正常顯示縮圖。</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+          支援 macOS / Linux 嗎？
+          <span class="faq-arrow">›</span>
+        </div>
+        <div class="faq-a">後端程式碼理論上跨平台，但「在檔案總管中顯示」功能僅支援 Windows。macOS / Linux 用戶需將 <code>start.bat</code> 改為對應的 shell script。</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <p>ImageTag Studio · MIT License · <a href="https://github.com/your-username/image-tagger">GitHub</a></p>
+</footer>
+
+<script>
+function toggleFaq(el){
+  const item=el.parentElement;
+  item.classList.toggle('open');
+}
+function copyCode(btn){
+  const pre=btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(()=>{
+    btn.textContent='已複製！';
+    setTimeout(()=>btn.textContent='複製',2000);
+  });
+}
+</script>
+</body>
+</html>
