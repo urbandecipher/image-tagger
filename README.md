@@ -40,7 +40,7 @@
 
 ```bash
 # 1. 複製此專案
-git clone https://github.com/your-username/image-tagger.git
+git git clone https://github.com/urbandecipher/image-tagger.git
 cd image-tagger
 
 # 2. 建立虛擬環境
