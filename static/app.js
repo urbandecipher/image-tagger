@@ -757,6 +757,8 @@ function renderDetTags(tags) {
         state.detStagedRemove.add(tag);
         el.classList.add('staged-remove');
       }
+      const effective = state.detOriginalTags.length - state.detStagedRemove.size + state.detStagedAdd.length;
+      document.getElementById('detTagCount').textContent = effective;
     });
     list.appendChild(el);
   });
