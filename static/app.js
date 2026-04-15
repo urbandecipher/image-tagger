@@ -351,9 +351,177 @@ function getPaginationPages(cur, total) {
   return [...pages].sort((a, b) => a - b);
 }
 
-// ── Stub card event handlers (defined in Task 7 & 8) ──
-function onCardClick(e, card, img, idx) {}
-function onCardRightClick(e, card, img) {}
+// ── Card Event Handlers ───────────────────────
+function onCardClick(e, card, img, idx) {
+  if (!state.selectMode) {
+    openDetailPanel(img.id);
+    return;
+  }
+
+  if (e.shiftKey && state.lastClickedIndex !== null) {
+    const gallery  = document.getElementById('gallery');
+    const cards    = [...gallery.querySelectorAll('.card')];
+    const start    = Math.min(state.lastClickedIndex, idx);
+    const end      = Math.max(state.lastClickedIndex, idx);
+    cards.slice(start, end + 1).forEach(c => {
+      const id = Number(c.dataset.id);
+      state.selectedIds.add(id);
+      c.classList.add('selected');
+    });
+  } else {
+    const id = img.id;
+    if (state.selectedIds.has(id)) {
+      state.selectedIds.delete(id);
+      card.classList.remove('selected');
+    } else {
+      state.selectedIds.add(id);
+      card.classList.add('selected');
+    }
+    state.lastClickedIndex = idx;
+  }
+  updateSelectCount();
+}
+
+function onCardRightClick(e, card, img) {
+  e.preventDefault();
+  if (!state.selectMode) return;
+
+  const menu = document.getElementById('ctxMenu');
+  menu.style.left = e.clientX + 'px';
+  menu.style.top  = e.clientY + 'px';
+  menu.classList.remove('hidden');
+  menu._targetImg = img;
+  document.addEventListener('click', hideCtxMenu, { once: true });
+}
+
+function hideCtxMenu() {
+  document.getElementById('ctxMenu').classList.add('hidden');
+}
+
+// ── Selection System ──────────────────────────
+function enterSelectMode() {
+  state.selectMode = true;
+  document.getElementById('gallery').classList.add('select-mode');
+  document.getElementById('btnSelectMode').classList.add('active');
+  document.getElementById('selectInfo').classList.remove('hidden');
+  updateSelectCount();
+}
+
+function exitSelectMode() {
+  state.selectMode = false;
+  state.selectedIds.clear();
+  state.lastClickedIndex = null;
+  document.getElementById('gallery').classList.remove('select-mode');
+  document.getElementById('btnSelectMode').classList.remove('active');
+  document.getElementById('selectInfo').classList.add('hidden');
+  document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
+}
+
+function updateSelectCount() {
+  document.getElementById('selectCount').textContent = `■ ${state.selectedIds.size}`;
+}
+
+// ── Lasso ─────────────────────────────────────
+function bindLasso() {
+  const wrap  = document.getElementById('galleryWrap');
+  const lasso = document.getElementById('lassoRect');
+
+  wrap.addEventListener('mousedown', (e) => {
+    if (!state.selectMode) return;
+    if (e.target.closest('.card')) return;
+    if (e.button !== 0) return;
+
+    const rect = wrap.getBoundingClientRect();
+    const gallery = wrap.querySelector('.gallery');
+    state.lassoStart = { x: e.clientX - rect.left, y: e.clientY - rect.top + gallery.scrollTop };
+    state.lassoActive = true;
+    lasso.style.left   = state.lassoStart.x + 'px';
+    lasso.style.top    = state.lassoStart.y + 'px';
+    lasso.style.width  = '0px';
+    lasso.style.height = '0px';
+    lasso.classList.remove('hidden');
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!state.lassoActive) return;
+    const rect   = wrap.getBoundingClientRect();
+    const gallery = wrap.querySelector('.gallery');
+    const curX   = e.clientX - rect.left;
+    const curY   = e.clientY - rect.top + gallery.scrollTop;
+    const sx     = state.lassoStart.x;
+    const sy     = state.lassoStart.y;
+
+    lasso.style.left   = Math.min(sx, curX) + 'px';
+    lasso.style.top    = Math.min(sy, curY) + 'px';
+    lasso.style.width  = Math.abs(curX - sx) + 'px';
+    lasso.style.height = Math.abs(curY - sy) + 'px';
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!state.lassoActive) return;
+    state.lassoActive = false;
+    lasso.classList.add('hidden');
+    selectCardsInLasso(lasso);
+    updateSelectCount();
+  });
+}
+
+function selectCardsInLasso(lassoEl) {
+  const lassoRect = lassoEl.getBoundingClientRect();
+  document.querySelectorAll('.card').forEach(card => {
+    const r = card.getBoundingClientRect();
+    if (rectsOverlap(lassoRect, r)) {
+      state.selectedIds.add(Number(card.dataset.id));
+      card.classList.add('selected');
+    }
+  });
+}
+
+function rectsOverlap(a, b) {
+  return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+}
+
+// ── Context Menu ──────────────────────────────
+function bindContextMenu() {
+  document.getElementById('ctxSelectSimilar').addEventListener('click', () => {
+    const img = document.getElementById('ctxMenu')._targetImg;
+    if (!img || !img.tags) return;
+    const topTags = img.tags.slice(0, 3);
+    document.querySelectorAll('.card').forEach(card => {
+      const cardImg = state.galleryCache.find(i => i.id === Number(card.dataset.id));
+      if (!cardImg) return;
+      const hasAll = topTags.every(t => cardImg.tags.includes(t));
+      if (hasAll) {
+        state.selectedIds.add(cardImg.id);
+        card.classList.add('selected');
+      }
+    });
+    updateSelectCount();
+    hideCtxMenu();
+  });
+
+  document.getElementById('ctxInvertSelect').addEventListener('click', () => {
+    document.querySelectorAll('.card').forEach(card => {
+      const id = Number(card.dataset.id);
+      if (state.selectedIds.has(id)) {
+        state.selectedIds.delete(id);
+        card.classList.remove('selected');
+      } else {
+        state.selectedIds.add(id);
+        card.classList.add('selected');
+      }
+    });
+    updateSelectCount();
+    hideCtxMenu();
+  });
+
+  document.getElementById('ctxClearSelect').addEventListener('click', () => {
+    exitSelectMode();
+    enterSelectMode();
+    hideCtxMenu();
+  });
+}
 
 // ── Search ───────────────────────────────────
 const TAG_ZH = {};
