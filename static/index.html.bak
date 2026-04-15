@@ -1,0 +1,2140 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ImageTag Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Theme tokens ── */
+[data-theme="dark"] {
+  --bg:       #111113;
+  --surface:  #18181b;
+  --surface2: #1f1f23;
+  --surface3: #28282e;
+  --border:   #2e2e36;
+  --border2:  #3a3a45;
+  --accent:   #7c6aff;
+  --accent-h: #9d8fff;
+  --accent-s: rgba(124,106,255,0.15);
+  --text:     #f0f0f4;
+  --text2:    #a0a0b0;
+  --text3:    #606070;
+  --tag-bg:   #1e1e28;
+  --tag-act:  #7c6aff;
+  --sug-bg:   #1f1f27;
+  --red:      #ff6b6b;
+  --red-s:    rgba(255,107,107,0.12);
+  --teal:     #2dd4bf;
+  --shadow:   0 4px 24px rgba(0,0,0,0.4);
+}
+[data-theme="light"] {
+  --bg:       #f4f4f7;
+  --surface:  #ffffff;
+  --surface2: #f0f0f4;
+  --surface3: #e8e8ef;
+  --border:   #dcdce6;
+  --border2:  #c8c8d8;
+  --accent:   #5b4de0;
+  --accent-h: #7060f0;
+  --accent-s: rgba(91,77,224,0.1);
+  --text:     #1a1a2e;
+  --text2:    #5a5a78;
+  --text3:    #9090a8;
+  --tag-bg:   #eeeef8;
+  --tag-act:  #5b4de0;
+  --sug-bg:   #ffffff;
+  --red:      #e03535;
+  --red-s:    rgba(224,53,53,0.08);
+  --teal:     #0d9488;
+  --shadow:   0 4px 24px rgba(0,0,0,0.10);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+body {
+  font-family:'Inter',sans-serif;
+  background:var(--bg);color:var(--text);
+  display:grid;
+  grid-template-columns:290px 1fr;
+  grid-template-rows:52px 1fr;
+  grid-template-areas:"header header" "sidebar main";
+  height:100vh;overflow:hidden;
+  transition:background 0.25s,color 0.25s;
+}
+
+/* ── Header ── */
+header {
+  grid-area:header;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 18px;gap:12px;
+}
+.logo {
+  font-size:14px;font-weight:600;
+  display:flex;align-items:center;gap:7px;
+  color:var(--text);white-space:nowrap;
+}
+.logo-dot {
+  width:7px;height:7px;border-radius:50%;
+  background:var(--accent);box-shadow:0 0 8px var(--accent);
+}
+.header-sep{flex:1;}
+.stat-pill {
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  color:var(--text2);background:var(--surface2);
+  border:1px solid var(--border);border-radius:20px;
+  padding:3px 10px;display:flex;align-items:center;gap:4px;white-space:nowrap;
+}
+.stat-pill b{color:var(--accent);font-weight:500;}
+
+.icon-btn {
+  width:32px;height:32px;border-radius:8px;border:1px solid var(--border);
+  background:var(--surface2);color:var(--text2);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:15px;transition:all 0.15s;flex-shrink:0;
+}
+.icon-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* ── Sidebar ── */
+.sidebar {
+  grid-area:sidebar;background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.sidebar-top{flex-shrink:0;}
+.sidebar-scroll{flex:1;overflow-y:auto;}
+.sidebar-scroll::-webkit-scrollbar{width:3px;}
+.sidebar-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+.s-section{padding:12px 14px;border-bottom:1px solid var(--border);}
+.s-label{font-size:10px;font-weight:600;letter-spacing:1px;color:var(--text3);
+  text-transform:uppercase;margin-bottom:7px;}
+
+/* inputs */
+input[type="text"]{
+  width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:7px;color:var(--text);font-family:'Inter',sans-serif;
+  font-size:13px;padding:7px 10px;outline:none;transition:border-color 0.2s;
+}
+input[type="text"]:focus{border-color:var(--accent);}
+input[type="text"]::placeholder{color:var(--text3);}
+
+/* buttons */
+.btn {
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  font-family:'Inter',sans-serif;font-size:13px;font-weight:500;
+  border:none;border-radius:7px;cursor:pointer;
+  transition:all 0.15s;padding:7px 12px;white-space:nowrap;
+}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent-h);}
+.btn-ghost{background:var(--surface2);color:var(--text2);border:1px solid var(--border);}
+.btn-ghost:hover{background:var(--surface3);color:var(--text);border-color:var(--border2);}
+.btn-danger{background:var(--red-s);color:var(--red);border:1px solid transparent;}
+.btn-danger:hover{border-color:var(--red);}
+.btn:disabled{opacity:0.38;cursor:not-allowed;}
+.btn-full{width:100%;}
+
+/* range */
+.range-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);}
+input[type="range"]{flex:1;accent-color:var(--accent);height:3px;}
+.range-val{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);min-width:28px;}
+
+/* progress */
+.prog-wrap{margin-top:8px;display:none;}
+.prog-wrap.show{display:block;}
+.prog-track{height:3px;background:var(--surface3);border-radius:2px;overflow:hidden;margin-bottom:5px;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--teal));
+  border-radius:2px;transition:width 0.4s;width:0%;}
+.prog-text{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3);
+  display:flex;justify-content:space-between;}
+
+/* ── Tag categories ── */
+.sidebar-cat-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 14px 4px;border-bottom:1px solid var(--border);
+  position:sticky;top:0;background:var(--surface);z-index:2;
+}
+.cat-ctrl-label{font-size:10px;font-weight:600;letter-spacing:1px;color:var(--text3);text-transform:uppercase;}
+.cat-ctrl-btns{display:flex;gap:4px;}
+.cat-ctrl-btn{
+  font-size:10px;padding:2px 8px;border-radius:4px;
+  border:1px solid var(--border);background:transparent;
+  color:var(--text3);cursor:pointer;transition:all 0.15s;
+  font-family:'Inter',sans-serif;
+}
+.cat-ctrl-btn:hover{border-color:var(--border2);color:var(--text);}
+.cat-block{padding:8px 14px;border-bottom:1px solid var(--border);}
+.cat-header{display:flex;align-items:center;gap:6px;cursor:pointer;
+  user-select:none;padding:2px 0;border-radius:5px;}
+.cat-header:hover .cat-title{color:var(--text);}
+.cat-title{font-size:10px;font-weight:600;letter-spacing:0.8px;color:var(--text2);
+  text-transform:uppercase;flex:1;transition:color 0.15s;}
+.cat-count{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text3);
+  background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:1px 6px;}
+.cat-arrow{font-size:9px;color:var(--text3);transition:transform 0.2s;}
+.cat-arrow.open{transform:rotate(90deg);}
+.cat-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px;
+  overflow:hidden;transition:max-height 0.3s ease,margin-top 0.3s;max-height:2000px;}
+.cat-tags.collapsed{max-height:0;margin-top:0;}
+
+/* Tag list items (new list style) */
+.tag-chip {
+  display:flex;align-items:center;gap:0;
+  padding:5px 10px 5px 0;cursor:pointer;
+  border-radius:6px;transition:all 0.15s;
+  position:relative;border-bottom:1px solid transparent;
+}
+.tag-chip:hover{background:var(--surface2);}
+.tag-chip:hover .chip-bar{opacity:1;}
+.tag-chip.active{background:var(--accent-s);}
+.tag-chip.active .chip-en{color:var(--accent);}
+.tag-chip.active .chip-bar{background:var(--accent);opacity:1;}
+
+.chip-bar-wrap{
+  width:6px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  margin-right:8px;margin-left:8px;
+}
+.chip-bar{
+  width:4px;border-radius:2px;
+  background:var(--accent);opacity:0.5;
+  transition:all 0.2s;flex-shrink:0;
+}
+.chip-bar-full{
+  height:3px;border-radius:2px;
+  background:var(--accent);opacity:0.45;
+  position:absolute;left:0;top:50%;transform:translateY(-50%);
+  pointer-events:none;transition:width 0.3s ease;
+}
+.chip-en{
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  font-weight:500;color:var(--text2);flex:1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:color 0.15s;
+}
+.chip-zh{font-size:10px;color:var(--text3);flex-shrink:0;margin-right:8px;}
+.chip-n{
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  color:var(--text3);flex-shrink:0;min-width:28px;text-align:right;
+}
+
+/* ── Main ── */
+main{grid-area:main;display:flex;flex-direction:column;overflow:hidden;}
+
+.toolbar{
+  padding:8px 14px;background:var(--surface);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;
+}
+.search-wrap{flex:1;position:relative;}
+.search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);
+  color:var(--text3);pointer-events:none;font-size:12px;}
+.search-wrap input{padding-left:30px;font-size:13px;}
+.search-suggestions{
+  position:absolute;top:calc(100% + 4px);left:0;right:0;
+  background:var(--sug-bg);border:1px solid var(--border);
+  border-radius:8px;z-index:60;max-height:220px;overflow-y:auto;
+  display:none;box-shadow:var(--shadow);
+}
+.search-suggestions.show{display:block;}
+.sug-item{padding:7px 11px;cursor:pointer;font-size:12px;
+  display:flex;align-items:center;gap:8px;transition:background 0.1s;}
+.sug-item:hover{background:var(--surface2);}
+.sug-en{font-family:'JetBrains Mono',monospace;color:var(--text);font-size:11px;}
+.sug-zh{color:var(--text2);font-size:11px;}
+.sug-n{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);}
+
+.fchip{
+  font-size:12px;padding:5px 11px;border-radius:20px;
+  border:1px solid var(--border);background:transparent;
+  color:var(--text2);cursor:pointer;font-family:'Inter',sans-serif;
+  transition:all 0.15s;white-space:nowrap;
+}
+.fchip.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.fchip:hover:not(.active){border-color:var(--border2);color:var(--text);}
+
+/* gallery */
+.gallery{
+  flex:1;overflow-y:auto;padding:14px;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));
+  gap:10px;align-content:start;
+}
+.gallery::-webkit-scrollbar{width:5px;}
+.gallery::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;overflow:hidden;cursor:pointer;
+  transition:all 0.18s;position:relative;
+}
+.card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow);}
+.card-img{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:var(--surface2);}
+.card-body{padding:6px 7px;}
+.card-tags{display:flex;flex-wrap:wrap;gap:3px;max-height:36px;overflow:hidden;}
+.mini-tag{
+  font-family:'JetBrains Mono',monospace;font-size:9px;
+  background:var(--surface2);border-radius:4px;
+  padding:2px 5px;color:var(--text3);white-space:nowrap;
+}
+.ubadge{
+  position:absolute;top:5px;right:5px;font-size:9px;
+  background:var(--red);color:#fff;border-radius:4px;
+  padding:2px 5px;font-weight:600;
+}
+
+/* Select mode */
+.card.selectable{cursor:pointer;}
+.card.selected{border-color:var(--accent)!important;box-shadow:0 0 0 2px rgba(124,106,255,0.35);}
+.card-check{
+  position:absolute;top:6px;left:6px;
+  width:20px;height:20px;border-radius:5px;
+  border:2px solid rgba(255,255,255,0.7);
+  background:rgba(0,0,0,0.3);
+  display:none;align-items:center;justify-content:center;
+  font-size:12px;color:#fff;transition:all 0.15s;
+}
+body.select-mode .card-check{display:flex;}
+body.select-mode .card.selected .card-check{
+  background:var(--accent);border-color:var(--accent);
+}
+body.select-mode .card:hover .card-check{border-color:#fff;}
+
+/* Bulk action bar */
+.bulk-bar{
+  display:none;padding:8px 14px;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  align-items:center;gap:10px;
+  animation:fadeUp 0.2s ease;
+}
+body.select-mode .bulk-bar{display:flex;}
+body.select-mode .toolbar{display:none;}
+.bulk-count{font-size:13px;font-weight:500;color:var(--text);flex:1;}
+.bulk-count span{color:var(--accent);font-weight:600;}
+.move-input-wrap{display:flex;gap:6px;align-items:center;}
+.move-input-wrap input{
+  width:220px;font-size:12px;padding:6px 10px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:7px;color:var(--text);font-family:'Inter',sans-serif;outline:none;
+}
+.move-input-wrap input:focus{border-color:var(--accent);}
+.move-input-wrap input::placeholder{color:var(--text3);}
+
+/* Collection tabs */
+.col-tabs-wrap{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;overflow-x:auto;
+  scrollbar-width:none;gap:0;flex-shrink:0;
+}
+.col-tabs-wrap::-webkit-scrollbar{display:none;}
+.col-tab{
+  display:flex;align-items:center;gap:6px;
+  padding:0 16px;height:38px;white-space:nowrap;
+  font-size:13px;font-weight:500;color:var(--text2);
+  cursor:pointer;border-bottom:2px solid transparent;
+  transition:all 0.15s;flex-shrink:0;user-select:none;
+}
+.col-tab:hover{color:var(--text);background:var(--surface2);}
+.col-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.col-tab .tab-count{
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  background:var(--surface2);border-radius:8px;
+  padding:1px 6px;color:var(--text3);
+}
+.col-tab.active .tab-count{background:var(--accent-s);color:var(--accent);}
+.col-tab-add{
+  padding:0 12px;height:38px;display:flex;align-items:center;
+  color:var(--text3);cursor:pointer;font-size:18px;
+  transition:color 0.15s;flex-shrink:0;
+}
+.col-tab-add:hover{color:var(--accent);}
+
+/* Collection manage modal */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.6);
+  z-index:200;display:none;align-items:center;justify-content:center;
+  backdrop-filter:blur(4px);
+}
+.modal-overlay.open{display:flex;}
+.modal{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:24px;width:360px;
+  box-shadow:var(--shadow);animation:slideIn 0.2s ease;
+}
+.modal h3{font-size:16px;font-weight:600;margin-bottom:16px;}
+.modal-row{display:flex;gap:8px;margin-bottom:12px;}
+.modal-row input{flex:1;}
+.col-list{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;max-height:240px;overflow-y:auto;}
+.col-list-item{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px;background:var(--surface2);
+  border:1px solid var(--border);border-radius:7px;
+}
+.col-list-name{flex:1;font-size:13px;}
+.col-list-count{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;}
+.col-list-actions{display:flex;gap:4px;}
+.col-act-btn{
+  width:24px;height:24px;border-radius:5px;border:1px solid var(--border);
+  background:transparent;color:var(--text3);cursor:pointer;
+  font-size:12px;display:flex;align-items:center;justify-content:center;
+  transition:all 0.15s;
+}
+.col-act-btn:hover{border-color:var(--border2);color:var(--text);}
+.col-act-btn.del:hover{border-color:var(--red);color:var(--red);}
+
+/* Bulk bar collection assign */
+.assign-wrap{display:flex;gap:6px;align-items:center;}
+.assign-wrap select{
+  font-size:12px;padding:5px 8px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:7px;color:var(--text);font-family:'Inter',sans-serif;outline:none;
+}
+
+.pagination{
+  padding:7px 14px;border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--surface);gap:8px;flex-wrap:wrap;
+}
+.page-info{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;white-space:nowrap;}
+.page-btns{display:flex;gap:4px;align-items:center;flex-wrap:wrap;}
+.page-num-btn{
+  min-width:28px;height:28px;padding:0 6px;border-radius:6px;
+  border:1px solid var(--border);background:transparent;
+  color:var(--text2);cursor:pointer;font-family:'JetBrains Mono',monospace;
+  font-size:11px;display:flex;align-items:center;justify-content:center;
+  transition:all 0.15s;
+}
+.page-num-btn:hover{border-color:var(--border2);color:var(--text);}
+.page-num-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.page-num-btn.ellipsis{border:none;cursor:default;color:var(--text3);}
+.page-jump{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3);}
+.page-jump input{
+  width:44px;padding:4px 6px;font-size:11px;text-align:center;
+  font-family:'JetBrains Mono',monospace;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:6px;color:var(--text);outline:none;
+}
+.page-jump input:focus{border-color:var(--accent);}
+
+/* ── Detail panel ── */
+.det-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.5);
+  z-index:100;display:none;backdrop-filter:blur(6px);
+}
+.det-overlay.open{display:flex;justify-content:flex-end;}
+.det-panel{
+  width:420px;background:var(--surface);border-left:1px solid var(--border);
+  height:100%;display:flex;flex-direction:column;overflow:hidden;
+  animation:slideIn 0.2s ease;box-shadow:-8px 0 32px rgba(0,0,0,0.2);
+}
+@keyframes slideIn{from{transform:translateX(24px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+
+.det-img-wrap{position:relative;background:var(--bg);flex-shrink:0;}
+.det-img{width:100%;max-height:280px;object-fit:contain;display:block;}
+.det-close{
+  position:absolute;top:8px;right:8px;
+  background:rgba(0,0,0,0.55);border:none;color:#fff;
+  width:26px;height:26px;border-radius:50%;cursor:pointer;
+  font-size:14px;display:flex;align-items:center;justify-content:center;
+  transition:background 0.15s;
+}
+.det-close:hover{background:rgba(0,0,0,0.85);}
+.det-nav{
+  position:absolute;top:50%;transform:translateY(-50%);
+  background:rgba(0,0,0,0.45);border:none;color:#fff;
+  width:32px;height:48px;cursor:pointer;
+  font-size:18px;display:flex;align-items:center;justify-content:center;
+  transition:all 0.15s;border-radius:4px;
+}
+.det-nav:hover{background:rgba(0,0,0,0.8);}
+.det-nav:disabled{opacity:0.2;cursor:default;}
+.det-nav-prev{left:4px;}
+.det-nav-next{right:4px;}
+.det-nav-info{
+  position:absolute;bottom:6px;left:50%;transform:translateX(-50%);
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  background:rgba(0,0,0,0.55);color:rgba(255,255,255,0.8);
+  padding:2px 8px;border-radius:10px;pointer-events:none;
+}
+
+.det-body{flex:1;overflow-y:auto;padding:13px;}
+.det-body::-webkit-scrollbar{width:4px;}
+.det-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+.det-path-row{
+  display:flex;align-items:flex-start;gap:6px;margin-bottom:12px;
+}
+.det-path{
+  flex:1;font-family:'JetBrains Mono',monospace;font-size:10px;
+  color:var(--text2);word-break:break-all;line-height:1.6;
+}
+.reveal-btn{
+  flex-shrink:0;width:26px;height:26px;border-radius:6px;
+  border:1px solid var(--border);background:var(--surface2);
+  color:var(--text2);cursor:pointer;font-size:13px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.15s;margin-top:1px;
+}
+.reveal-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+.det-tags-wrap{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:11px;}
+.edit-tag{
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:6px;padding:4px 8px;color:var(--text);
+  display:flex;align-items:center;gap:4px;line-height:1.2;
+}
+.edit-tag-en{font-size:10px;}
+.edit-tag-zh{font-size:9px;color:var(--text2);margin-left:2px;}
+.edit-tag .del{cursor:pointer;color:var(--text3);font-size:13px;
+  line-height:1;transition:color 0.15s;margin-left:2px;}
+.edit-tag .del:hover{color:var(--red);}
+
+.add-row{display:flex;gap:7px;margin-bottom:11px;}
+.add-row input{flex:1;}
+
+.det-footer{
+  padding:10px 13px;border-top:1px solid var(--border);
+  display:flex;gap:7px;background:var(--surface);
+}
+
+/* empty */
+.empty{
+  grid-column:1/-1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:60px 20px;color:var(--text3);gap:10px;font-size:14px;
+}
+.empty-icon{font-size:34px;opacity:0.35;}
+
+/* toast */
+.toast{
+  position:fixed;bottom:20px;right:20px;background:var(--surface);
+  border:1px solid var(--border);border-radius:8px;padding:10px 15px;
+  font-size:13px;color:var(--text);z-index:999;
+  animation:fadeUp 0.3s ease;max-width:300px;box-shadow:var(--shadow);
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+/* loading */
+#lov{position:fixed;inset:0;background:var(--bg);display:flex;
+  flex-direction:column;align-items:center;justify-content:center;z-index:200;gap:14px;transition:opacity 0.4s;}
+#lov.hidden{opacity:0;pointer-events:none;}
+.spinner{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--accent);
+  border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.s-hint{padding:16px;text-align:center;color:var(--text3);font-size:12px;}
+
+/* ── Trash Bin ── */
+.trash-fab{
+  position:fixed;bottom:28px;right:28px;z-index:90;
+  width:52px;height:52px;border-radius:50%;
+  background:var(--surface3);border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;cursor:pointer;
+  box-shadow:0 4px 20px rgba(0,0,0,0.4);
+  transition:all 0.2s;user-select:none;
+}
+.trash-fab:hover{border-color:var(--red);transform:scale(1.08);}
+.trash-fab.drag-over{
+  background:var(--red-s);border-color:var(--red);
+  transform:scale(1.18);box-shadow:0 6px 28px rgba(255,107,107,0.4);
+}
+.trash-fab .trash-count{
+  position:absolute;top:-4px;right:-4px;
+  min-width:18px;height:18px;border-radius:9px;
+  background:var(--red);color:#fff;
+  font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;
+  padding:0 4px;border:2px solid var(--bg);
+  display:none;
+}
+.trash-fab.has-items .trash-count{display:flex;}
+
+/* Trash panel */
+.trash-panel-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.6);
+  z-index:200;display:none;align-items:flex-end;justify-content:flex-end;
+  padding:0;
+}
+.trash-panel-overlay.open{display:flex;}
+.trash-panel{
+  width:380px;height:100vh;
+  background:var(--surface);border-left:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+  animation:slideIn 0.22s ease;box-shadow:-8px 0 32px rgba(0,0,0,0.3);
+}
+.trash-panel-header{
+  padding:16px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;flex-shrink:0;
+}
+.trash-panel-header h3{font-size:15px;font-weight:600;flex:1;}
+.trash-panel-list{flex:1;overflow-y:auto;padding:10px;}
+.trash-panel-list::-webkit-scrollbar{width:4px;}
+.trash-panel-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.trash-item{
+  display:flex;align-items:center;gap:10px;
+  padding:7px 8px;border-radius:8px;
+  background:var(--surface2);border:1px solid var(--border);
+  margin-bottom:6px;transition:border-color 0.15s;
+}
+.trash-item:hover{border-color:var(--border2);}
+.trash-item-thumb{
+  width:52px;height:52px;border-radius:6px;
+  object-fit:cover;flex-shrink:0;background:var(--surface3);
+}
+.trash-item-info{flex:1;min-width:0;}
+.trash-item-name{
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  margin-bottom:3px;
+}
+.trash-item-tags{font-size:10px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.trash-item-remove{
+  width:24px;height:24px;border-radius:5px;flex-shrink:0;
+  border:1px solid var(--border);background:transparent;
+  color:var(--text3);cursor:pointer;font-size:13px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.15s;
+}
+.trash-item-remove:hover{border-color:var(--red);color:var(--red);}
+.trash-empty{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px 20px;color:var(--text3);gap:10px;font-size:13px;
+}
+.trash-empty-icon{font-size:36px;opacity:0.3;}
+.trash-panel-footer{
+  padding:12px 16px;border-top:1px solid var(--border);
+  display:flex;gap:8px;flex-shrink:0;background:var(--surface2);
+}
+
+/* drag ghost */
+.dragging{opacity:0.5;outline:2px dashed var(--accent);}
+
+/* ── Scan History ── */
+.history-modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.6);
+  z-index:200;display:none;align-items:center;justify-content:center;
+  backdrop-filter:blur(4px);
+}
+.history-modal-overlay.open{display:flex;}
+.history-modal{
+  width:min(90vw,580px);max-height:80vh;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;display:flex;flex-direction:column;
+  overflow:hidden;box-shadow:var(--shadow);animation:slideIn 0.2s ease;
+}
+.history-modal-header{
+  display:flex;align-items:center;padding:16px 18px;
+  border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.history-modal-header h3{font-size:15px;font-weight:600;flex:1;}
+.history-list{flex:1;overflow-y:auto;padding:8px;}
+.history-list::-webkit-scrollbar{width:4px;}
+.history-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.history-item{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:10px 12px;border-radius:8px;
+  border:1px solid var(--border);background:var(--surface2);
+  margin-bottom:6px;transition:border-color 0.15s;
+}
+.history-item:hover{border-color:var(--border2);}
+.history-item-main{flex:1;min-width:0;}
+.history-folder{
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  color:var(--text);word-break:break-all;line-height:1.5;
+  margin-bottom:4px;
+}
+.history-meta{display:flex;gap:10px;flex-wrap:wrap;}
+.history-badge{
+  font-size:10px;color:var(--text3);
+  display:flex;align-items:center;gap:3px;
+}
+.history-badge b{color:var(--accent2);}
+.history-actions{display:flex;gap:4px;flex-shrink:0;margin-top:1px;}
+.h-btn{
+  width:26px;height:26px;border-radius:6px;
+  border:1px solid var(--border);background:transparent;
+  color:var(--text3);cursor:pointer;font-size:12px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.15s;
+}
+.h-btn:hover{border-color:var(--border2);color:var(--text);}
+.h-btn.del:hover{border-color:var(--red);color:var(--red);}
+.history-empty{
+  padding:32px;text-align:center;
+  color:var(--text3);font-size:13px;
+}
+
+/* ── Analytics Panel ── */
+.analytics-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.75);
+  z-index:300;display:none;align-items:center;justify-content:center;
+  backdrop-filter:blur(8px);
+}
+.analytics-overlay.open{display:flex;}
+.analytics-panel{
+  width:min(92vw,1100px);height:min(88vh,760px);
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;display:flex;flex-direction:column;
+  overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.5);
+  animation:slideIn 0.25s ease;
+}
+.analytics-header{
+  display:flex;align-items:center;padding:16px 20px;
+  border-bottom:1px solid var(--border);flex-shrink:0;gap:12px;
+}
+.analytics-header h2{font-size:16px;font-weight:600;flex:1;}
+.analytics-header p{font-size:12px;color:var(--text3);}
+.analytics-body{
+  flex:1;display:flex;overflow:hidden;
+}
+.chart-area{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.chart-area svg{max-width:100%;max-height:100%;}
+.tag-detail-panel{
+  width:280px;border-left:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;
+}
+.tag-detail-header{
+  padding:14px 16px 10px;border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.tag-detail-title{font-size:13px;font-weight:600;margin-bottom:2px;}
+.tag-detail-sub{font-size:11px;color:var(--text3);}
+.tag-detail-list{flex:1;overflow-y:auto;padding:8px;}
+.tag-detail-list::-webkit-scrollbar{width:4px;}
+.tag-detail-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.tag-item{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 8px;border-radius:6px;cursor:pointer;
+  transition:background 0.15s;margin-bottom:2px;
+}
+.tag-item:hover{background:var(--surface2);}
+.tag-item.selected{background:var(--accent-s);color:var(--accent);}
+.tag-item-bar{
+  height:4px;border-radius:2px;flex-shrink:0;
+  background:var(--accent);opacity:0.6;
+}
+.tag-item-name{font-family:'JetBrains Mono',monospace;font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tag-item-zh{font-size:10px;color:var(--text3);flex-shrink:0;}
+.tag-item-count{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);flex-shrink:0;}
+.analytics-footer{
+  padding:10px 20px;border-top:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;flex-shrink:0;
+  background:var(--surface2);
+}
+.selected-tags-wrap{
+  flex:1;display:flex;flex-wrap:wrap;gap:5px;align-items:center;
+  font-size:12px;color:var(--text3);
+}
+.sel-tag-chip{
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  background:var(--accent-s);border:1px solid var(--accent);
+  color:var(--accent);border-radius:4px;padding:2px 8px;
+  display:flex;align-items:center;gap:4px;
+}
+.sel-tag-chip .x{cursor:pointer;opacity:0.7;}
+.sel-tag-chip .x:hover{opacity:1;}
+/* tooltip */
+.chart-tooltip{
+  position:fixed;pointer-events:none;
+  background:var(--surface3);border:1px solid var(--border);
+  border-radius:7px;padding:8px 12px;font-size:12px;
+  color:var(--text);z-index:400;white-space:nowrap;
+  box-shadow:var(--shadow);display:none;
+}
+</style>
+</head>
+<body>
+
+<div id="lov"><div class="spinner"></div><div style="font-size:13px;color:var(--text3)" data-i18n="loading">載入中...</div></div>
+
+<header>
+  <div class="logo"><div class="logo-dot"></div>ImageTag Studio</div>
+  <div class="header-sep"></div>
+  <div class="stat-pill" id="pill-total">總計 <b id="stat-total">0</b> 張</div>
+  <div class="stat-pill" id="pill-untagged">未標記 <b id="stat-untagged">0</b> 張</div>
+  <div class="icon-btn" onclick="openAnalytics()" title="Tag 分析圖表" style="font-size:13px;">📊</div>
+  <div class="icon-btn" onclick="toggleTheme()" id="theme-btn" title="切換亮/暗">🌙</div>
+  <div class="icon-btn" onclick="toggleLang()" id="lang-btn" title="切換語言" style="font-size:12px;font-weight:600;">EN</div>
+</header>
+
+<div class="sidebar">
+  <div class="sidebar-top">
+    <div class="s-section">
+      <div class="s-label" data-i18n="folder-label">圖片資料夾</div>
+      <input type="text" id="folder-input" placeholder="C:\Users\...\images" style="margin-bottom:7px">
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-ghost" style="flex:1" onclick="scanFolder()">
+          <span>🔍</span><span data-i18n="scan-btn">掃描資料夾</span>
+        </button>
+        <button class="icon-btn" onclick="openHistoryModal()" title="匯入歷史" style="flex-shrink:0">🗂</button>
+      </div>
+    </div>
+    <div class="s-section">
+      <div class="s-label" data-i18n="tag-settings-label">自動打標設定</div>
+      <div class="range-row" style="margin-bottom:9px">
+        <span data-i18n="threshold-label">信心閾值</span>
+        <input type="range" id="threshold" min="0.1" max="0.9" step="0.05" value="0.35"
+               oninput="document.getElementById('thresh-val').textContent=parseFloat(this.value).toFixed(2)">
+        <span class="range-val" id="thresh-val">0.35</span>
+      </div>
+      <button class="btn btn-primary btn-full" id="tag-btn" onclick="startTagging()">
+        <span>⚡</span><span data-i18n="start-tag-btn">開始打標</span>
+      </button>
+      <div class="prog-wrap" id="prog-wrap">
+        <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
+        <div class="prog-text"><span id="prog-cur">—</span><span id="prog-pct">0%</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="sidebar-cat-header">
+    <span class="cat-ctrl-label" data-i18n="tags-section">Tags</span>
+    <div class="cat-ctrl-btns">
+      <button class="cat-ctrl-btn" onclick="collapseAllCats()" data-i18n="collapse-all">全部收合</button>
+      <button class="cat-ctrl-btn" onclick="expandAllCats()" data-i18n="expand-all">全部展開</button>
+    </div>
+  </div>
+  <div class="sidebar-scroll" id="tag-categories">
+    <div class="s-hint" data-i18n="scan-hint">掃描後顯示 Tags</div>
+  </div>
+</div>
+
+<main>
+  <!-- Normal toolbar -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input type="text" id="search-input" placeholder="搜索 tag 或輸入中文，逗號分隔...">
+      <div class="search-suggestions" id="sug-box"></div>
+    </div>
+    <button class="fchip" id="untagged-filter" onclick="toggleUntagged()" data-i18n="untagged-filter">未標記</button>
+    <button class="btn btn-ghost" onclick="refreshGallery()" data-i18n="refresh-btn">重整</button>
+    <button class="fchip" id="select-mode-btn" onclick="toggleSelectMode()" data-i18n="select-mode">選取</button>
+  </div>
+
+  <!-- Bulk action bar (visible in select mode) -->
+  <div class="bulk-bar">
+    <div class="bulk-count">已選取 <span id="sel-count">0</span> 張</div>
+    <button class="cat-ctrl-btn" onclick="selectAll()" data-i18n="select-all">全選</button>
+    <button class="cat-ctrl-btn" onclick="clearSelection()" data-i18n="clear-sel">取消全選</button>
+    <div class="assign-wrap">
+      <select id="assign-col-select">
+        <option value="">移入集合...</option>
+      </select>
+      <button class="btn btn-ghost" style="padding:6px 10px;font-size:12px" onclick="bulkAssignCollection()">指派</button>
+    </div>
+    <div class="move-input-wrap">
+      <input type="text" id="move-target" placeholder="目標資料夾路徑...">
+      <button class="btn btn-ghost" style="padding:6px 10px;font-size:12px" onclick="bulkMove()" data-i18n="move-btn">移動</button>
+    </div>
+    <button class="btn btn-danger" style="padding:6px 12px;font-size:12px" onclick="bulkDelete()" data-i18n="delete-btn-bulk">刪除檔案</button>
+    <button class="cat-ctrl-btn" onclick="toggleSelectMode()" data-i18n="cancel-sel">取消</button>
+  </div>
+
+  <!-- Collection tabs -->
+  <div class="col-tabs-wrap" id="col-tabs"></div>
+
+  <div class="gallery" id="gallery">
+    <div class="empty"><div class="empty-icon">🖼</div><div data-i18n="empty-hint">輸入資料夾路徑並掃描以開始</div></div>
+  </div>
+
+  <div class="pagination">
+    <div class="page-info" id="page-info">— / —</div>
+    <div class="page-btns" id="page-btns"></div>
+    <div class="page-jump">
+      <span data-i18n="goto-page">跳至</span>
+      <input type="number" id="page-jump-input" min="1" value="1">
+      <button class="cat-ctrl-btn" onclick="jumpToPage()" data-i18n="goto-btn">GO</button>
+    </div>
+  </div>
+</main>
+
+<!-- Detail -->
+<div class="det-overlay" id="det-overlay" onclick="closeDetail(event)">
+  <div class="det-panel" onclick="event.stopPropagation()">
+    <div class="det-img-wrap">
+      <img class="det-img" id="det-img" src="" alt="">
+      <button class="det-close" onclick="closeDetail()">✕</button>
+      <button class="det-nav det-nav-prev" id="det-prev" onclick="navDetail(-1)" title="上一張 ←">‹</button>
+      <button class="det-nav det-nav-next" id="det-next" onclick="navDetail(1)" title="下一張 →">›</button>
+      <div class="det-nav-info" id="det-nav-info"></div>
+    </div>
+    <div class="det-body">
+      <div class="det-path-row">
+        <div class="det-path" id="det-path"></div>
+        <button class="reveal-btn" onclick="revealInExplorer()" title="在檔案總管中開啟">📂</button>
+      </div>
+      <div class="s-label" style="margin-bottom:8px" data-i18n="tags-label">Tags</div>
+      <div class="det-tags-wrap" id="det-tags"></div>
+      <div class="add-row">
+        <input type="text" id="new-tag-input" data-i18n-ph="add-tag-ph" placeholder="新增 tag...">
+        <button class="btn btn-ghost" onclick="addTag()">＋</button>
+      </div>
+    </div>
+    <div class="det-footer">
+      <button class="btn btn-primary" style="flex:1" onclick="saveTags()">
+        <span>💾</span><span data-i18n="save-btn">儲存</span>
+      </button>
+      <button class="btn btn-danger" onclick="deleteImagePermanent()" title="永久刪除檔案">🗑</button>
+    </div>
+  </div>
+</div>
+
+<!-- Trash Bin FAB -->
+<div class="trash-fab" id="trash-fab"
+  ondragover="onTrashDragOver(event)"
+  ondragleave="onTrashDragLeave(event)"
+  ondrop="onTrashDrop(event)"
+  onclick="openTrashPanel()">
+  🗑
+  <div class="trash-count" id="trash-count">0</div>
+</div>
+
+<!-- Trash Panel -->
+<div class="trash-panel-overlay" id="trash-overlay" onclick="closeTrashPanel(event)">
+  <div class="trash-panel" onclick="event.stopPropagation()">
+    <div class="trash-panel-header">
+      <h3>🗑 待刪除清單</h3>
+      <button class="icon-btn" onclick="closeTrashPanel()">✕</button>
+    </div>
+    <div class="trash-panel-list" id="trash-list"></div>
+    <div class="trash-panel-footer">
+      <button class="btn btn-ghost" style="flex:1;font-size:12px" onclick="clearTrash()">清空清單</button>
+      <button class="btn btn-danger" style="flex:1;font-size:12px" onclick="confirmDeleteAll()">永久刪除全部</button>
+    </div>
+  </div>
+</div>
+
+<!-- Scan History Modal -->
+<div class="history-modal-overlay" id="history-overlay" onclick="closeHistoryModal(event)">
+  <div class="history-modal" onclick="event.stopPropagation()">
+    <div class="history-modal-header">
+      <h3>🗂 匯入歷史紀錄</h3>
+      <button class="icon-btn" onclick="closeHistoryModal()" style="flex-shrink:0">✕</button>
+    </div>
+    <div class="history-list" id="history-list">
+      <div class="history-empty">載入中...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Analytics Panel -->
+<div class="analytics-overlay" id="analytics-overlay" onclick="closeAnalytics(event)">
+  <div class="analytics-panel" onclick="event.stopPropagation()">
+    <div class="analytics-header">
+      <div>
+        <h2>📊 Tag 分析圖表</h2>
+        <p>點擊色環選擇分類，點擊右側 tag 加入搜索條件</p>
+      </div>
+      <button class="icon-btn" onclick="closeAnalytics()" style="flex-shrink:0">✕</button>
+    </div>
+    <div class="analytics-body">
+      <div class="chart-area" id="chart-area">
+        <div style="color:var(--text3);font-size:13px">載入中...</div>
+      </div>
+      <div class="tag-detail-panel">
+        <div class="tag-detail-header">
+          <div class="tag-detail-title" id="detail-cat-title">選擇分類</div>
+          <div class="tag-detail-sub" id="detail-cat-sub">點擊左側色環查看 tag</div>
+        </div>
+        <div class="tag-detail-list" id="tag-detail-list"></div>
+      </div>
+    </div>
+    <div class="analytics-footer">
+      <div class="selected-tags-wrap" id="sel-tags-wrap">
+        <span id="sel-tags-hint">點擊 tag 加入搜索...</span>
+      </div>
+      <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px" onclick="clearAnalyticsSel()">清除</button>
+      <button class="btn btn-primary" style="padding:6px 14px;font-size:12px" onclick="applyAnalyticsSearch()">搜索圖片 →</button>
+    </div>
+  </div>
+</div>
+<div class="chart-tooltip" id="chart-tooltip"></div>
+
+<!-- Collection manage modal -->
+<div class="modal-overlay" id="col-modal" onclick="closeColModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>管理集合</h3>
+    <div class="modal-row">
+      <input type="text" id="new-col-input" placeholder="新集合名稱...">
+      <button class="btn btn-primary" style="padding:7px 12px" onclick="addCollection()">新增</button>
+    </div>
+    <div class="col-list" id="col-list"></div>
+    <button class="btn btn-ghost btn-full" onclick="closeColModal()">關閉</button>
+  </div>
+</div>
+
+<script>
+// ── Tag translations ───────────────────────────────────────────────────────────
+const TAG_ZH = {
+  '1girl':'1女','2girls':'2女','3girls':'3女','multiple girls':'多女','1boy':'1男',
+  '2boys':'2男','multiple boys':'多男','solo':'獨照','solo focus':'主角',
+  'crowd':'人群','chibi':'Q版','robot':'機器人','android':'機械人',
+  'long hair':'長髮','short hair':'短髮','medium hair':'中髮','very long hair':'超長髮',
+  'black hair':'黑髮','brown hair':'棕髮','blonde hair':'金髮','white hair':'白髮',
+  'silver hair':'銀髮','grey hair':'灰髮','blue hair':'藍髮','green hair':'綠髮',
+  'red hair':'紅髮','pink hair':'粉髮','purple hair':'紫髮','orange hair':'橙髮',
+  'teal hair':'青髮','multicolored hair':'多色髮','gradient hair':'漸層髮',
+  'twintails':'雙馬尾','ponytail':'馬尾','braid':'辮子','hair bun':'髮髻',
+  'ahoge':'呆毛','bangs':'瀏海','parted bangs':'分瀏海','hair between eyes':'眉間髮',
+  'hair ornament':'髮飾','hairband':'髮帶','hair flower':'髮花',
+  'hair over shoulder':'垂肩髮','curly hair':'捲髮','wavy hair':'波浪髮',
+  'straight hair':'直髮','side ponytail':'側馬尾','low twintails':'低雙馬',
+  'single hair bun':'單髮髻','hair over one eye':'單眼遮髮',
+  'smile':'微笑','grin':'咧嘴笑','laugh':'笑','cry':'哭','tears':'淚水',
+  'blush':'臉紅','frown':'皺眉','angry':'憤怒','sad':'悲傷','surprised':'驚訝',
+  'shocked':'震驚','embarrassed':'害羞','expressionless':'無表情',
+  'open mouth':'開嘴','closed mouth':'閉嘴','parted lips':'微開唇',
+  'tongue':'舌頭','teeth':'牙齒','wink':'眨眼','half-closed eyes':'半閉眼',
+  'closed eyes':'閉眼','looking at viewer':'注視觀者','looking away':'望向他處',
+  'looking back':'回頭看','looking up':'抬頭看','looking down':'低頭看',
+  'red eyes':'紅眼','blue eyes':'藍眼','green eyes':'綠眼','brown eyes':'棕眼',
+  'purple eyes':'紫眼','grey eyes':'灰眼','yellow eyes':'黃眼','black eyes':'黑眼',
+  'pink eyes':'粉眼','aqua eyes':'水藍眼','heterochromia':'異色瞳',
+  'lips':'嘴唇','nose':'鼻子','earrings':'耳環','portrait':'人像',
+  'dress':'裙裝','skirt':'裙子','shirt':'上衣','jacket':'夾克','coat':'外套',
+  'uniform':'制服','suit':'西裝','swimsuit':'泳衣','bikini':'比基尼',
+  'shorts':'短褲','pants':'長褲','jeans':'牛仔褲','leggings':'內搭褲',
+  'stockings':'絲襪','thighhighs':'大腿襪','socks':'襪子','shoes':'鞋子',
+  'boots':'靴子','heels':'高跟鞋','hat':'帽子','cap':'鴨舌帽',
+  'ribbon':'緞帶','bow':'蝴蝶結','tie':'領帶','scarf':'圍巾',
+  'gloves':'手套','necklace':'項鍊','bracelet':'手鍊','ring':'戒指',
+  'jewelry':'珠寶','armor':'盔甲','weapon':'武器','sword':'劍','gun':'槍',
+  'mask':'面具','glasses':'眼鏡','sunglasses':'太陽眼鏡','hairpin':'髮夾',
+  'kimono':'和服','yukata':'浴衣','maid':'女僕','school uniform':'學生制服',
+  'sailor':'水手服','apron':'圍裙','cloak':'斗篷','hoodie':'帽T',
+  'sweater':'毛衣','sleeveless':'無袖','bare shoulders':'裸肩',
+  'collar':'衣領','choker':'頸圈','belt':'腰帶','lace':'蕾絲','frills':'荷葉邊',
+  'bra':'胸罩','off shoulder':'露肩','crop top':'短版上衣',
+  'standing':'站立','sitting':'坐姿','lying':'臥姿','kneeling':'跪姿',
+  'running':'奔跑','walking':'行走','jumping':'跳躍','floating':'飄浮',
+  'crouching':'蹲下','leaning':'倚靠','arms up':'舉手',
+  'hand on hip':'手叉腰','crossed arms':'交叉手臂','v sign':'比V',
+  'upper body':'上半身','lower body':'下半身','full body':'全身',
+  'close-up':'近距離','cowboy shot':'牛仔構圖','bust':'胸上',
+  'from above':'俯視','from below':'仰視','from behind':'從後','from side':'側面',
+  'dutch angle':'斜角','profile':'側臉','head tilt':'歪頭',
+  'simple background':'簡單背景','white background':'白色背景',
+  'black background':'黑色背景','grey background':'灰色背景',
+  'blue background':'藍色背景','pink background':'粉色背景',
+  'gradient background':'漸層背景','outdoors':'戶外','indoors':'室內',
+  'sky':'天空','clouds':'雲朵','forest':'森林','trees':'樹木','grass':'草地',
+  'flowers':'花朵','garden':'花園','beach':'海灘','ocean':'海洋','water':'水',
+  'city':'城市','urban':'都市','street':'街道','building':'建築',
+  'room':'房間','bedroom':'臥室','school':'學校','office':'辦公室',
+  'night':'夜晚','day':'白天','sunset':'夕陽','sunrise':'日出',
+  'rain':'雨','snow':'雪','fog':'霧','cherry blossom':'櫻花',
+  'space':'宇宙','stars':'星星','moon':'月亮','sun':'太陽',
+  'bokeh':'散景','blurry background':'模糊背景','depth of field':'景深','blurry':'模糊',
+  'realistic':'寫實','anime':'動漫','semi-realistic':'半寫實',
+  'sketch':'素描','lineart':'線稿','watercolor':'水彩','oil painting':'油畫',
+  'masterpiece':'傑作','best quality':'最高品質','high quality':'高品質',
+  'ultra detailed':'超細緻','detailed':'細緻','highres':'高解析',
+  'monochrome':'單色','greyscale':'灰階','colorful':'彩色','pastel':'粉彩',
+  'cinematic':'電影感','dramatic lighting':'戲劇光影','soft lighting':'柔和光線',
+  'backlighting':'逆光','shadow':'陰影',
+  'chair':'椅子','breasts':'胸部','large breasts':'大胸','small breasts':'小胸',
+  'cleavage':'乳溝','midriff':'腰部','navel':'肚臍','bare arms':'裸臂',
+  'thighs':'大腿','legs':'腿部','hand':'手','nail polish':'指甲油',
+  'tattoo':'刺青','mole':'痣','cat ears':'貓耳','fox ears':'狐耳',
+  'animal ears':'獸耳','tail':'尾巴','wings':'翅膀','halo':'光環',
+  'horns':'角','headphones':'耳機','flower':'花','rose':'玫瑰',
+  'food':'食物','cup':'杯子','phone':'手機','umbrella':'雨傘',
+  'scenery':'風景','motor vehicle':'機動車','car':'汽車','road':'道路',
+  'sign':'標誌','power lines':'電線','crosswalk':'斑馬線','sidewalk':'人行道',
+  'road sign':'路牌','people':'人群','mole under eye':'眼下痣',
+  'blue shirt':'藍色上衣','yellow hairband':'黃色髮帶','denim':'牛仔布',
+};
+const ZH_TO_EN={};
+Object.entries(TAG_ZH).forEach(([en,zh])=>{ZH_TO_EN[zh]=en;});
+function getZh(en){return TAG_ZH[en.toLowerCase()]||'';}
+function resolveTag(s){const t=s.trim();return ZH_TO_EN[t]||t;}
+
+// ── i18n ──────────────────────────────────────────────────────────────────────
+const I18N={
+  zh:{
+    'loading':'載入中...','folder-label':'圖片資料夾','scan-btn':'掃描資料夾',
+    'tag-settings-label':'自動打標設定','threshold-label':'信心閾值',
+    'start-tag-btn':'開始打標','scan-hint':'掃描後顯示 Tags',
+    'search-placeholder':'搜索 tag 或輸入中文，逗號分隔多個...',
+    'untagged-filter':'未標記','refresh-btn':'重整',
+    'empty-hint':'輸入資料夾路徑並掃描以開始','empty-search':'找不到符合條件的圖片',
+    'prev-btn':'‹ 上一頁','next-btn':'下一頁 ›','tags-label':'Tags',
+    'add-tag-ph':'新增 tag...','save-btn':'儲存',
+    'stat-total':'總計 {n} 張','stat-untagged':'未標記 {n} 張',
+    'page-info':'第 {page} / {pages} 頁　共 {total} 張',
+    'no-tags':'無 tag 資料',
+    'del-confirm':'從資料庫移除此圖片記錄？（不刪除實際檔案）',
+    'saved':'✅ 已儲存','tag-done':'✅ 打標完成！共 {n} 張',
+    'scan-done':'✅ 掃描完成：共 {total} 張，新增 {new} 張，未標記 {untagged} 張',
+    'err-no-folder':'請輸入資料夾路徑','err-scan-first':'請先掃描資料夾',
+    'cat-character':'👤 人物','cat-hair':'💇 髮型髮色','cat-face':'👁️ 五官表情',
+    'cat-clothing':'👗 服裝配飾','cat-pose':'🤸 姿勢構圖','cat-background':'🌄 場景背景',
+    'cat-style':'✨ 畫風品質','cat-other':'📌 其他',
+    'reveal-tip':'在檔案總管中顯示',
+    'select-mode':'選取',
+    'select-all':'全選',
+    'clear-sel':'取消全選',
+    'move-btn':'移動',
+    'delete-btn-bulk':'刪除檔案',
+    'cancel-sel':'取消',
+    'no-selection':'請先選取圖片',
+    'tags-section':'Tags 分類',
+    'collapse-all':'全收',
+    'expand-all':'全展',
+    'goto-page':'跳至',
+    'goto-btn':'GO',
+  },
+  en:{
+    'loading':'Loading...','folder-label':'Image Folder','scan-btn':'Scan Folder',
+    'tag-settings-label':'Auto-Tag Settings','threshold-label':'Threshold',
+    'start-tag-btn':'Start Tagging','scan-hint':'Scan to show Tags',
+    'search-placeholder':'Search tags or type Chinese, comma to separate...',
+    'untagged-filter':'Untagged','refresh-btn':'Refresh',
+    'empty-hint':'Enter folder path and scan to begin','empty-search':'No images found',
+    'prev-btn':'‹ Prev','next-btn':'Next ›','tags-label':'Tags',
+    'add-tag-ph':'Add tag...','save-btn':'Save',
+    'stat-total':'Total {n}','stat-untagged':'Untagged {n}',
+    'page-info':'Page {page}/{pages}  {total} images',
+    'no-tags':'No tag data',
+    'del-confirm':'Remove from database? (File will not be deleted)',
+    'saved':'✅ Saved','tag-done':'✅ Tagging done! {n} images',
+    'scan-done':'✅ Scanned: {total} total, {new} new, {untagged} untagged',
+    'err-no-folder':'Please enter folder path','err-scan-first':'Please scan a folder first',
+    'cat-character':'👤 Character','cat-hair':'💇 Hair','cat-face':'👁️ Face & Expression',
+    'cat-clothing':'👗 Clothing','cat-pose':'🤸 Pose & Composition',
+    'cat-background':'🌄 Scene & Background','cat-style':'✨ Style & Quality','cat-other':'📌 Other',
+    'reveal-tip':'Reveal in Explorer',
+    'select-mode':'Select',
+    'select-all':'All',
+    'clear-sel':'Clear',
+    'move-btn':'Move',
+    'delete-btn-bulk':'Delete Files',
+    'cancel-sel':'Cancel',
+    'no-selection':'Please select images first',
+    'tags-section':'Tag Categories',
+    'collapse-all':'Collapse',
+    'expand-all':'Expand',
+    'goto-page':'Go to',
+    'goto-btn':'GO',
+  }
+};
+let lang=localStorage.getItem('lang')||'zh';
+function t(key,vars){
+  let s=(I18N[lang]||I18N.zh)[key]||key;
+  if(vars)Object.keys(vars).forEach(k=>{s=s.replaceAll('{'+k+'}',vars[k]);});
+  return s;
+}
+function applyI18n(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent=t(el.dataset.i18n));
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>el.placeholder=t(el.dataset.i18nPh));
+  document.getElementById('lang-btn').textContent=lang==='zh'?'EN':'中文';
+  document.getElementById('search-input').placeholder=t('search-placeholder');
+  refreshStats_ui();
+}
+function toggleLang(){lang=lang==='zh'?'en':'zh';localStorage.setItem('lang',lang);applyI18n();renderTagCategories(window._allTags||[]);}
+
+// ── Theme ─────────────────────────────────────────────────────────────────────
+let theme=localStorage.getItem('theme')||'dark';
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme',theme);
+  document.getElementById('theme-btn').textContent=theme==='dark'?'🌙':'☀️';
+}
+function toggleTheme(){theme=theme==='dark'?'light':'dark';localStorage.setItem('theme',theme);applyTheme();}
+applyTheme();
+
+// ── Tag Categories ────────────────────────────────────────────────────────────
+const TAG_CATS=[
+  {key:'cat-character',kw:['1girl','2girls','3girls','1boy','2boys','solo','multiple girls','multiple boys','crowd','chibi','robot','android','solo focus']},
+  {key:'cat-hair',kw:['hair','twintails','ponytail','braid','bun','ahoge','bangs','blonde','black hair','brown hair','red hair','white hair','silver hair','blue hair','green hair','pink hair','purple hair','orange hair','grey hair','teal hair','multicolored hair','gradient hair']},
+  {key:'cat-face',kw:['smile','grin','laugh','cry','tears','blush','frown','angry','sad','surprised','shocked','expressionless','eyes','mouth','lips','nose','looking at viewer','looking away','looking back','looking up','looking down','closed eyes','open mouth','closed mouth','parted lips','tongue','teeth','wink','heterochromia','red eyes','blue eyes','green eyes','brown eyes','purple eyes','grey eyes','yellow eyes','black eyes','pink eyes','aqua eyes','glowing eyes','earrings','portrait']},
+  {key:'cat-clothing',kw:['dress','skirt','shirt','jacket','coat','uniform','suit','swimsuit','bikini','shorts','pants','jeans','leggings','stockings','thighhighs','socks','shoes','boots','heels','hat','cap','ribbon','bow','tie','scarf','gloves','necklace','bracelet','ring','jewelry','armor','weapon','sword','gun','mask','glasses','sunglasses','hairpin','kimono','yukata','maid','school uniform','sailor','apron','cloak','hoodie','sweater','sleeveless','bare shoulders','collar','choker','belt','lace','frills','lingerie','bra']},
+  {key:'cat-pose',kw:['standing','sitting','lying','kneeling','running','walking','jumping','floating','crouching','leaning','arms up','hand on hip','crossed arms','v sign','peace sign','pointing','upper body','lower body','full body','close-up','cowboy shot','bust','from above','from below','from behind','from side','dutch angle','profile','head tilt']},
+  {key:'cat-background',kw:['background','simple background','white background','black background','grey background','outdoors','indoors','sky','clouds','forest','trees','grass','flowers','garden','beach','ocean','sea','water','city','urban','street','building','room','bedroom','school','office','night','day','sunset','sunrise','rain','snow','fog','cherry blossom','space','stars','moon','sun','bokeh','blurry background','depth of field','scenery']},
+  {key:'cat-style',kw:['realistic','anime','semi-realistic','3d','cg','sketch','lineart','watercolor','oil painting','digital art','masterpiece','best quality','high quality','ultra detailed','detailed','absurdres','highres','monochrome','greyscale','colorful','pastel','cinematic','dramatic lighting','soft lighting','backlighting','rim light','shadow']},
+];
+function categorizeTag(tag){
+  const l=tag.toLowerCase();
+  for(const cat of TAG_CATS){if(cat.kw.some(k=>l.includes(k)||k.includes(l)))return cat.key;}
+  return 'cat-other';
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let S={page:1,perPage:60,total:0,query:'',untaggedOnly:false,folder:'',
+  detail:null,detailTags:[],progressTimer:null,catOpen:{},statTotal:0,statUntagged:0,
+  selectMode:false,selected:new Set(),lastClickedIdx:-1,
+  trashSet:new Set(),trashItems:{},
+  // collection: null=all, -1=uncollected, N=collection id
+  activeCollection:null,collections:[]};
+
+async function api(method,path,body){
+  const opts={method,headers:{'Content-Type':'application/json'}};
+  if(body)opts.body=JSON.stringify(body);
+  const r=await fetch(path,opts);
+  if(!r.ok){const tx=await r.text();throw new Error(tx);}
+  return r.json();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init(){
+  applyI18n();
+  try{
+    const cfg=await api('GET','/api/config');
+    if(cfg.threshold){
+      document.getElementById('threshold').value=cfg.threshold;
+      document.getElementById('thresh-val').textContent=parseFloat(cfg.threshold).toFixed(2);
+    }
+    if(cfg.last_folder){
+      S.folder=cfg.last_folder;
+      document.getElementById('folder-input').value=cfg.last_folder;
+      await loadCollections();
+      await refreshGallery();await loadTagCategories();await refreshStats();
+    } else {
+      await loadCollections();
+    }
+  }catch(e){console.warn('Init:',e);}
+  const ov=document.getElementById('lov');
+  ov.classList.add('hidden');setTimeout(()=>ov.remove(),500);
+}
+
+async function refreshStats(){
+  try{const s=await api('GET','/api/stats');S.statTotal=s.total;S.statUntagged=s.untagged;refreshStats_ui();}catch(e){}
+}
+function refreshStats_ui(){
+  document.getElementById('pill-total').innerHTML=t('stat-total',{n:`<b id="stat-total">${S.statTotal}</b>`});
+  document.getElementById('pill-untagged').innerHTML=t('stat-untagged',{n:`<b id="stat-untagged">${S.statUntagged}</b>`});
+}
+function updateStats(total,untagged){S.statTotal=total;S.statUntagged=untagged;refreshStats_ui();}
+
+// ── Scan ──────────────────────────────────────────────────────────────────────
+async function scanFolder(){
+  const folder=document.getElementById('folder-input').value.trim();
+  if(!folder)return toast(t('err-no-folder'));
+  S.folder=folder;
+  try{const res=await api('POST','/api/scan',{folder});
+    toast(t('scan-done',{total:res.total,new:res.new,untagged:res.untagged}));
+    updateStats(res.total,res.untagged);refreshGallery();loadTagCategories();
+  }catch(e){toast('❌ '+e.message);}
+}
+
+// ── Tagging ───────────────────────────────────────────────────────────────────
+async function startTagging(){
+  if(!S.folder)return toast(t('err-scan-first'));
+  const threshold=parseFloat(document.getElementById('threshold').value);
+  try{await api('POST','/api/tag',{folder:S.folder,threshold,batch_size:8});
+    document.getElementById('tag-btn').disabled=true;
+    document.getElementById('prog-wrap').classList.add('show');
+    S.progressTimer=setInterval(pollProgress,1000);
+  }catch(e){toast('❌ '+e.message);}
+}
+async function pollProgress(){
+  try{const p=await api('GET','/api/tag/progress');
+    const pct=p.total>0?Math.round(p.done/p.total*100):0;
+    document.getElementById('prog-fill').style.width=pct+'%';
+    document.getElementById('prog-pct').textContent=pct+'%';
+    document.getElementById('prog-cur').textContent=p.current?p.current.slice(-26):`${p.done}/${p.total}`;
+    if(!p.running){clearInterval(S.progressTimer);document.getElementById('tag-btn').disabled=false;
+      document.getElementById('prog-wrap').classList.remove('show');
+      toast(t('tag-done',{n:p.done}));refreshGallery();loadTagCategories();refreshStats();}
+  }catch(e){}
+}
+
+// ── Tag Categories ────────────────────────────────────────────────────────────
+async function loadTagCategories(){
+  let url='/api/tags/all';
+  if(S.activeCollection===-1) url+='?uncollected=true';
+  else if(S.activeCollection!==null) url+=`?collection_id=${S.activeCollection}`;
+  const tags=await api('GET',url);
+  window._allTags=tags;renderTagCategories(tags);
+}
+function renderTagCategories(tags){
+  const c=document.getElementById('tag-categories');
+  if(!tags.length){c.innerHTML=`<div class="s-hint">${t('no-tags')}</div>`;return;}
+  const groups={};TAG_CATS.forEach(x=>groups[x.key]=[]);groups['cat-other']=[];
+  tags.forEach(item=>{const k=categorizeTag(item.tag);(groups[k]||(groups[k]=[])).push(item);});
+  const allCats=[...TAG_CATS.map(x=>x.key),'cat-other'];
+  const defOpen=['cat-character','cat-hair','cat-face'];
+  c.innerHTML=allCats.map(catKey=>{
+    const items=groups[catKey]||[];if(!items.length)return'';
+    const isOpen=S.catOpen[catKey]!==undefined?S.catOpen[catKey]:defOpen.includes(catKey);
+    return`<div class="cat-block">
+      <div class="cat-header" onclick="toggleCat('${catKey}')">
+        <span class="cat-title">${t(catKey)}</span>
+        <span class="cat-count">${items.length}</span>
+        <span class="cat-arrow ${isOpen?'open':''}" id="arrow-${catKey}">›</span>
+      </div>
+      <div class="cat-tags ${isOpen?'':'collapsed'}" id="cattags-${catKey}">
+        ${items.map(item=>{const zh=getZh(item.tag);
+          return`<div class="tag-chip" data-tag="${item.tag}" onclick="clickTagChip(this,'${item.tag.replace(/'/g,"\\'")}')">
+            <span class="chip-en">${item.tag}</span>
+            ${zh?`<span class="chip-zh">${zh}</span>`:''}
+            <span class="chip-n">${item.count}</span>
+          </div>`;}).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleCat(k){
+  const el=document.getElementById('cattags-'+k),ar=document.getElementById('arrow-'+k);
+  if(!el)return;const o=!el.classList.contains('collapsed');
+  el.classList.toggle('collapsed',o);ar.classList.toggle('open',!o);S.catOpen[k]=!o;
+}
+function collapseAllCats(){
+  document.querySelectorAll('.cat-tags').forEach(el=>{
+    const k=el.id.replace('cattags-','');
+    el.classList.add('collapsed');
+    const ar=document.getElementById('arrow-'+k);
+    if(ar)ar.classList.remove('open');
+    S.catOpen[k]=false;
+  });
+}
+function expandAllCats(){
+  document.querySelectorAll('.cat-tags').forEach(el=>{
+    const k=el.id.replace('cattags-','');
+    el.classList.remove('collapsed');
+    const ar=document.getElementById('arrow-'+k);
+    if(ar)ar.classList.add('open');
+    S.catOpen[k]=true;
+  });
+}
+function clickTagChip(el,tag){
+  document.querySelectorAll(`.tag-chip[data-tag="${tag}"]`).forEach(c=>c.classList.toggle('active'));
+  const active=[...new Set([...document.querySelectorAll('.tag-chip.active')].map(c=>c.dataset.tag))];
+  document.getElementById('search-input').value=active.join(',');
+  S.page=1;refreshGallery();hideSug();
+}
+
+// ── Search ────────────────────────────────────────────────────────────────────
+const si=document.getElementById('search-input'),sb=document.getElementById('sug-box');
+si.addEventListener('input',()=>{
+  clearTimeout(window._st);showSug();
+  window._st=setTimeout(()=>{S.page=1;refreshGallery();},400);
+});
+si.addEventListener('keydown',e=>{if(e.key==='Escape')hideSug();});
+document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))hideSug();});
+
+function getTerms(){return si.value.split(',').map(s=>resolveTag(s)).filter(Boolean);}
+
+function showSug(){
+  const parts=si.value.split(','),last=parts[parts.length-1].trim();
+  if(!last||!window._allTags){hideSug();return;}
+  const ll=last.toLowerCase();
+  const m=(window._allTags||[]).filter(item=>{
+    const zh=getZh(item.tag);
+    return item.tag.includes(ll)||zh.includes(last);
+  }).slice(0,8);
+  if(!m.length){hideSug();return;}
+  sb.innerHTML=m.map(item=>{const zh=getZh(item.tag);
+    return`<div class="sug-item" onclick="applySug('${item.tag.replace(/'/g,"\\'")}')">
+      <span class="sug-en">${item.tag}</span>
+      ${zh?`<span class="sug-zh">${zh}</span>`:''}
+      <span class="sug-n">${item.count}</span>
+    </div>`;}).join('');
+  sb.classList.add('show');
+}
+function hideSug(){sb.classList.remove('show');}
+function applySug(tag){
+  const parts=si.value.split(',');parts[parts.length-1]=tag;si.value=parts.join(',');
+  hideSug();
+  document.querySelectorAll('.tag-chip').forEach(c=>{if(c.dataset.tag===tag)c.classList.add('active');});
+  S.page=1;refreshGallery();
+}
+
+// ── Gallery ───────────────────────────────────────────────────────────────────
+async function refreshGallery(){
+  const query=getTerms().join(',');
+  const params=new URLSearchParams({query,page:S.page,per_page:S.perPage,untagged_only:S.untaggedOnly});
+  if(S.activeCollection===-1) params.set('uncollected','true');
+  else if(S.activeCollection!==null) params.set('collection_id',S.activeCollection);
+  try{const res=await api('GET',`/api/images?${params}`);
+    S.total=res.total;renderGallery(res.images);renderPagination(res.total);
+  }catch(e){toast('❌ '+e.message);}
+}
+function renderGallery(images){
+  const el=document.getElementById('gallery');
+  if(!images.length){el.innerHTML=`<div class="empty"><div class="empty-icon">🔍</div><div>${t('empty-search')}</div></div>`;return;}
+  el.innerHTML=images.map(img=>{
+    const sel=S.selected.has(img.id);
+    const inTrash=S.trashSet.has(img.id);
+    return`<div class="card ${sel?'selected':''} ${inTrash?'dragging':''}"
+      data-id="${img.id}"
+      draggable="true"
+      ondragstart="onCardDragStart(event,${img.id})"
+      ondragend="onCardDragEnd(event)"
+      onclick="onCardClick(event,${img.id})">
+      <div class="card-check">${sel?'✓':''}</div>
+      <img class="card-img" src="/api/thumb/${img.id}" loading="lazy" alt="">
+      ${!img.tagged?`<div class="ubadge">${t('untagged-filter')}</div>`:''}
+      ${inTrash?`<div class="ubadge" style="background:var(--red);left:5px;right:auto">🗑</div>`:''}
+      <div class="card-body"><div class="card-tags">
+        ${img.tags.slice(0,7).map(tg=>`<span class="mini-tag">${tg}</span>`).join('')}
+      </div></div>
+    </div>`;}).join('');
+  // store last clicked index for shift-select
+  window._galleryImages = images;
+}
+function renderPagination(total){
+  const pages=Math.ceil(total/S.perPage)||1;
+  document.getElementById('page-info').textContent=t('page-info',{page:S.page,pages,total});
+  // jump input
+  const ji=document.getElementById('page-jump-input');
+  if(ji){ji.max=pages;ji.value=S.page;}
+
+  // build page number buttons
+  const btns=document.getElementById('page-btns');
+  if(!btns)return;
+  const cur=S.page;
+  let nums=[];
+  // always show first, last, current±2, with ellipsis
+  const show=new Set([1,pages]);
+  for(let i=Math.max(1,cur-2);i<=Math.min(pages,cur+2);i++)show.add(i);
+  const sorted=[...show].sort((a,b)=>a-b);
+  let prev=0;
+  sorted.forEach(n=>{
+    if(n-prev>1)nums.push('...');
+    nums.push(n);
+    prev=n;
+  });
+
+  btns.innerHTML=
+    `<button class="page-num-btn" onclick="changePage(-1)" ${cur<=1?'disabled':''}>‹</button>`+
+    nums.map(n=>n==='...'
+      ?`<span class="page-num-btn ellipsis">…</span>`
+      :`<button class="page-num-btn ${n===cur?'active':''}" onclick="goToPage(${n})">${n}</button>`
+    ).join('')+
+    `<button class="page-num-btn" onclick="changePage(1)" ${cur>=pages?'disabled':''}>›</button>`;
+}
+function changePage(d){goToPage(S.page+d);}
+function goToPage(n){
+  const pages=Math.ceil(S.total/S.perPage)||1;
+  S.page=Math.max(1,Math.min(pages,n));
+  refreshGallery();document.getElementById('gallery').scrollTop=0;
+}
+function jumpToPage(){
+  const v=parseInt(document.getElementById('page-jump-input').value);
+  if(!isNaN(v))goToPage(v);
+}
+document.getElementById('page-jump-input').addEventListener('keydown',e=>{if(e.key==='Enter')jumpToPage();});
+function toggleUntagged(){
+  S.untaggedOnly=!S.untaggedOnly;
+  document.getElementById('untagged-filter').classList.toggle('active',S.untaggedOnly);
+  S.page=1;refreshGallery();
+}
+
+// ── Collections ───────────────────────────────────────────────────────────────
+async function loadCollections(){
+  try{
+    const res=await api('GET','/api/collections');
+    S.collections=res.collections;
+    renderCollectionTabs(res.collections,res.uncollected);
+    renderAssignSelect(res.collections);
+  }catch(e){console.warn('Collections:',e);}
+}
+
+function renderCollectionTabs(cols,uncollected){
+  const wrap=document.getElementById('col-tabs');
+  const all_active=S.activeCollection===null;
+  const unc_active=S.activeCollection===-1;
+  let html=`<div class="col-tab ${all_active?'active':''}" onclick="switchCollection(null)">
+    全部 <span class="tab-count">${S.statTotal||''}</span>
+  </div>`;
+  cols.forEach(c=>{
+    const active=S.activeCollection===c.id;
+    html+=`<div class="col-tab ${active?'active':''}" onclick="switchCollection(${c.id})">
+      ${c.name} <span class="tab-count">${c.count}</span>
+    </div>`;
+  });
+  html+=`<div class="col-tab ${unc_active?'active':''}" onclick="switchCollection(-1)">
+    未分類 <span class="tab-count">${uncollected}</span>
+  </div>`;
+  html+=`<div class="col-tab-add" onclick="openColModal()" title="管理集合">⊕</div>`;
+  wrap.innerHTML=html;
+}
+
+function renderAssignSelect(cols){
+  const sel=document.getElementById('assign-col-select');
+  if(!sel)return;
+  sel.innerHTML='<option value="">移入集合...</option>'+
+    cols.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')+
+    '<option value="-1">移出集合（未分類）</option>';
+}
+
+function switchCollection(id){
+  S.activeCollection=id;
+  S.page=1;
+  S.selected.clear();updateSelCount();
+  refreshGallery();loadTagCategories();
+  // update tab highlight
+  loadCollections();
+}
+
+async function bulkAssignCollection(){
+  if(!S.selected.size)return toast(t('no-selection'));
+  const sel=document.getElementById('assign-col-select');
+  if(!sel||!sel.value)return toast('請選擇集合');
+  const cid=sel.value==='-1'?null:parseInt(sel.value);
+  try{
+    const res=await api('POST','/api/images/set-collection',{
+      image_ids:[...S.selected],collection_id:cid
+    });
+    toast(`✅ 已指派 ${res.count} 張圖片`);
+    S.selected.clear();updateSelCount();
+    loadCollections();refreshGallery();
+  }catch(e){toast('❌ '+e.message);}
+}
+
+// Collection modal
+function openColModal(){
+  document.getElementById('col-modal').classList.add('open');
+  renderColList();
+}
+function closeColModal(e){
+  if(e&&e.target!==document.getElementById('col-modal'))return;
+  document.getElementById('col-modal').classList.remove('open');
+}
+function renderColList(){
+  const list=document.getElementById('col-list');
+  list.innerHTML=S.collections.map(c=>`
+    <div class="col-list-item">
+      <span class="col-list-name">${c.name}</span>
+      <span class="col-list-count">${c.count} 張</span>
+      <div class="col-list-actions">
+        <button class="col-act-btn" onclick="promptRename(${c.id},'${c.name.replace(/'/g,"\'")}')">✎</button>
+        <button class="col-act-btn del" onclick="confirmDeleteCol(${c.id},'${c.name.replace(/'/g,"\'")}')">✕</button>
+      </div>
+    </div>`).join('');
+}
+async function addCollection(){
+  const input=document.getElementById('new-col-input');
+  const name=input.value.trim();
+  if(!name)return;
+  try{
+    await api('POST','/api/collections',{name});
+    input.value='';
+    await loadCollections();
+    renderColList();
+    toast('✅ 已新增集合：'+name);
+  }catch(e){toast('❌ '+e.message);}
+}
+async function promptRename(id,oldName){
+  const name=prompt('重新命名集合：',oldName);
+  if(!name||name===oldName)return;
+  try{
+    await api('PUT','/api/collections',{collection_id:id,name});
+    await loadCollections();renderColList();
+  }catch(e){toast('❌ '+e.message);}
+}
+async function confirmDeleteCol(id,name){
+  if(!confirm(`刪除集合「${name}」？裡面的圖片會移回未分類。`))return;
+  try{
+    await api('DELETE',`/api/collections/${id}`);
+    if(S.activeCollection===id)S.activeCollection=null;
+    await loadCollections();renderColList();
+    refreshGallery();
+  }catch(e){toast('❌ '+e.message);}
+}
+
+// ── Select mode ───────────────────────────────────────────────────────────────
+function toggleSelectMode(){
+  S.selectMode=!S.selectMode;
+  S.selected.clear();
+  S.lastClickedIdx=-1;
+  document.body.classList.toggle('select-mode',S.selectMode);
+  document.getElementById('select-mode-btn').classList.toggle('active',S.selectMode);
+  updateSelCount();
+  refreshGallery();
+}
+
+function onCardClick(e,id){
+  if(!S.selectMode){openDetail(id);return;}
+  const images=window._galleryImages||[];
+  const idx=images.findIndex(img=>img.id===id);
+  if(e.shiftKey && S.lastClickedIdx>=0 && idx>=0){
+    // range select
+    const lo=Math.min(S.lastClickedIdx,idx);
+    const hi=Math.max(S.lastClickedIdx,idx);
+    for(let i=lo;i<=hi;i++) S.selected.add(images[i].id);
+  } else {
+    if(S.selected.has(id)) S.selected.delete(id);
+    else S.selected.add(id);
+    S.lastClickedIdx=idx;
+  }
+  updateSelCount();
+  // update card visuals without full re-render
+  document.querySelectorAll('.card').forEach(card=>{
+    const cid=parseInt(card.dataset.id);
+    const sel=S.selected.has(cid);
+    card.classList.toggle('selected',sel);
+    const chk=card.querySelector('.card-check');
+    if(chk)chk.textContent=sel?'✓':'';
+  });
+}
+
+function updateSelCount(){
+  document.getElementById('sel-count').textContent=S.selected.size;
+}
+
+function selectAll(){
+  (window._galleryImages||[]).forEach(img=>S.selected.add(img.id));
+  updateSelCount();
+  document.querySelectorAll('.card').forEach(c=>{
+    c.classList.add('selected');
+    const chk=c.querySelector('.card-check');
+    if(chk)chk.textContent='✓';
+  });
+}
+
+function clearSelection(){
+  S.selected.clear();
+  updateSelCount();
+  document.querySelectorAll('.card').forEach(c=>{
+    c.classList.remove('selected');
+    const chk=c.querySelector('.card-check');
+    if(chk)chk.textContent='';
+  });
+}
+
+async function bulkDelete(){
+  if(!S.selected.size)return toast(t('no-selection'));
+  const n=S.selected.size;
+  if(!confirm(`確定要刪除 ${n} 個檔案？此操作無法復原！`))return;
+  try{
+    const res=await api('POST','/api/images/bulk-delete',{
+      image_ids:[...S.selected],delete_files:true
+    });
+    toast(`✅ 已刪除 ${res.deleted} 個檔案${res.errors.length?'，'+res.errors.length+' 個失敗':''}`);
+    S.selected.clear();updateSelCount();
+    refreshGallery();loadTagCategories();refreshStats();
+  }catch(e){toast('❌ '+e.message);}
+}
+
+async function bulkMove(){
+  if(!S.selected.size)return toast(t('no-selection'));
+  const target=document.getElementById('move-target').value.trim();
+  if(!target)return toast('請輸入目標資料夾路徑');
+  const n=S.selected.size;
+  try{
+    const res=await api('POST','/api/images/bulk-move',{
+      image_ids:[...S.selected],target_folder:target
+    });
+    toast(`✅ 已移動 ${res.moved} 個檔案${res.errors.length?'，'+res.errors.length+' 個失敗':''}`);
+    S.selected.clear();updateSelCount();
+    refreshGallery();
+  }catch(e){toast('❌ '+e.message);}
+}
+
+// ── Detail ────────────────────────────────────────────────────────────────────
+async function openDetail(id){
+  const img=await api('GET',`/api/image/${id}`);
+  S.detail=img;S.detailTags=[...img.tags];
+  _renderDetailUI();
+  document.getElementById('det-overlay').classList.add('open');
+}
+
+function _renderDetailUI(){
+  const img=S.detail;
+  const images=window._galleryImages||[];
+  const idx=images.findIndex(i=>i.id===img.id);
+  S.detailIdx=idx;
+
+  document.getElementById('det-img').src=`/api/full/${img.id}`;
+  document.getElementById('det-path').textContent=img.path;
+  document.querySelector('.reveal-btn').title=t('reveal-tip');
+
+  // Nav arrows
+  const prevBtn=document.getElementById('det-prev');
+  const nextBtn=document.getElementById('det-next');
+  const info=document.getElementById('det-nav-info');
+  if(idx>=0){
+    prevBtn.disabled=idx<=0;
+    nextBtn.disabled=idx>=images.length-1;
+    info.textContent=`${idx+1} / ${images.length}`;
+  } else {
+    prevBtn.disabled=true;nextBtn.disabled=true;info.textContent='';
+  }
+  renderDetTags();
+}
+
+async function navDetail(dir){
+  const images=window._galleryImages||[];
+  const newIdx=(S.detailIdx||0)+dir;
+  if(newIdx<0||newIdx>=images.length)return;
+  const img=images[newIdx];
+  const full=await api('GET',`/api/image/${img.id}`);
+  S.detail=full;S.detailTags=[...full.tags];
+  _renderDetailUI();
+}
+
+// Keyboard navigation
+document.addEventListener('keydown',e=>{
+  const overlay=document.getElementById('det-overlay');
+  if(!overlay.classList.contains('open'))return;
+  if(e.target.tagName==='INPUT')return;
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();navDetail(-1);}
+  else if(e.key==='ArrowRight'||e.key==='ArrowDown'){e.preventDefault();navDetail(1);}
+  else if(e.key==='Escape'){closeDetail();}
+});
+
+function renderDetTags(){
+  document.getElementById('det-tags').innerHTML=S.detailTags.map((tg,i)=>{
+    const zh=getZh(tg);
+    return`<div class="edit-tag">
+      <span class="edit-tag-en">${tg}</span>
+      ${zh?`<span class="edit-tag-zh">${zh}</span>`:''}
+      <span class="del" onclick="removeTag(${i})">×</span>
+    </div>`;}).join('');
+}
+function removeTag(i){S.detailTags.splice(i,1);renderDetTags();}
+function addTag(){
+  const input=document.getElementById('new-tag-input');
+  const val=resolveTag(input.value).toLowerCase().replace(/\s+/g,' ');
+  if(!val)return;
+  if(!S.detailTags.includes(val)){S.detailTags.push(val);renderDetTags();}
+  input.value='';
+}
+document.getElementById('new-tag-input').addEventListener('keydown',e=>{if(e.key==='Enter')addTag();});
+
+async function saveTags(){
+  if(!S.detail)return;
+  await api('PUT','/api/image/tags',{image_id:S.detail.id,tags:S.detailTags});
+  toast(t('saved'));
+  // Stay on current image, just refresh gallery in background
+  refreshGallery();loadTagCategories();
+}
+async function deleteImagePermanent(){
+  if(!S.detail)return;
+  if(!confirm('永久刪除此檔案？此操作無法復原！'))return;
+  const images=window._galleryImages||[];
+  const idx=S.detailIdx||0;
+  try{
+    await api('POST','/api/images/bulk-delete',{image_ids:[S.detail.id],delete_files:true});
+    toast('✅ 已永久刪除');
+    // Try to open next image, otherwise close
+    const remaining=images.filter(i=>i.id!==S.detail.id);
+    window._galleryImages=remaining;
+    if(remaining.length===0){closeDetail();refreshGallery();return;}
+    const nextIdx=Math.min(idx,remaining.length-1);
+    const nextImg=await api('GET',`/api/image/${remaining[nextIdx].id}`);
+    S.detail=nextImg;S.detailTags=[...nextImg.tags];
+    _renderDetailUI();
+    refreshGallery();refreshStats();
+  }catch(e){toast('❌ '+e.message);}
+}
+async function revealInExplorer(){
+  if(!S.detail)return;
+  try{await api('GET',`/api/reveal/${S.detail.id}`);}
+  catch(e){toast('❌ '+e.message);}
+}
+function closeDetail(e){
+  if(e&&e.target!==document.getElementById('det-overlay'))return;
+  document.getElementById('det-overlay').classList.remove('open');S.detail=null;
+}
+
+
+
+
+// ── Trash Bin ─────────────────────────────────────────────────────────────────
+let _dragImgId = null;
+
+function onCardDragStart(e, id){
+  _dragImgId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', String(id));
+  setTimeout(()=>e.target.classList.add('dragging'), 0);
+}
+function onCardDragEnd(e){
+  e.target.classList.remove('dragging');
+  _dragImgId = null;
+}
+function onTrashDragOver(e){
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  document.getElementById('trash-fab').classList.add('drag-over');
+}
+function onTrashDragLeave(e){
+  document.getElementById('trash-fab').classList.remove('drag-over');
+}
+function onTrashDrop(e){
+  e.preventDefault();
+  document.getElementById('trash-fab').classList.remove('drag-over');
+  const id = parseInt(e.dataTransfer.getData('text/plain'));
+  if(!id||isNaN(id)) return;
+  addToTrash(id);
+}
+
+async function addToTrash(id){
+  if(S.trashSet.has(id)) return;
+  S.trashSet.add(id);
+  // Fetch image info if not cached
+  if(!S.trashItems[id]){
+    try{
+      const img = await api('GET', `/api/image/${id}`);
+      S.trashItems[id] = img;
+    }catch(e){ S.trashItems[id] = {id, path:'unknown', tags:[]}; }
+  }
+  updateTrashFab();
+  toast(`🗑 已加入待刪除清單（共 ${S.trashSet.size} 張）`);
+  // Re-render gallery to show trash indicator
+  renderGallery(window._galleryImages||[]);
+}
+
+function updateTrashFab(){
+  const fab = document.getElementById('trash-fab');
+  const cnt = document.getElementById('trash-count');
+  cnt.textContent = S.trashSet.size;
+  fab.classList.toggle('has-items', S.trashSet.size > 0);
+}
+
+function openTrashPanel(){
+  document.getElementById('trash-overlay').classList.add('open');
+  renderTrashList();
+}
+function closeTrashPanel(e){
+  if(e && e.target !== document.getElementById('trash-overlay')) return;
+  document.getElementById('trash-overlay').classList.remove('open');
+}
+
+function renderTrashList(){
+  const list = document.getElementById('trash-list');
+  if(!S.trashSet.size){
+    list.innerHTML = `<div class="trash-empty">
+      <div class="trash-empty-icon">🗑</div>
+      <div>清單為空</div>
+      <div style="font-size:11px;margin-top:4px">將圖片拖曳到右下角垃圾桶加入</div>
+    </div>`;
+    return;
+  }
+  list.innerHTML = [...S.trashSet].map(id=>{
+    const img = S.trashItems[id] || {id, path:'loading...', tags:[]};
+    const name = img.path.split(/[\/]/).pop();
+    const tags = img.tags.slice(0,5).join(', ');
+    return`<div class="trash-item">
+      <img class="trash-item-thumb" src="/api/thumb/${id}" alt="">
+      <div class="trash-item-info">
+        <div class="trash-item-name" title="${img.path}">${name}</div>
+        <div class="trash-item-tags">${tags||'無 tag'}</div>
+      </div>
+      <button class="trash-item-remove" onclick="removeFromTrash(${id})" title="從清單移除">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function removeFromTrash(id){
+  S.trashSet.delete(id);
+  delete S.trashItems[id];
+  updateTrashFab();
+  renderTrashList();
+  renderGallery(window._galleryImages||[]);
+}
+
+function clearTrash(){
+  S.trashSet.clear();
+  S.trashItems = {};
+  updateTrashFab();
+  renderTrashList();
+  renderGallery(window._galleryImages||[]);
+}
+
+async function confirmDeleteAll(){
+  if(!S.trashSet.size) return;
+  const n = S.trashSet.size;
+  if(!confirm(`永久刪除這 ${n} 個檔案？此操作無法復原！`)) return;
+  try{
+    const ids = [...S.trashSet];
+    const res = await api('POST', '/api/images/bulk-delete', {image_ids: ids, delete_files: true});
+    toast(`✅ 已永久刪除 ${res.deleted} 個檔案`);
+    clearTrash();
+    closeTrashPanel();
+    refreshGallery();
+    refreshStats();
+    loadTagCategories();
+  }catch(e){ toast('❌ '+e.message); }
+}
+// ── Scan History ──────────────────────────────────────────────────────────────
+async function openHistoryModal(){
+  document.getElementById('history-overlay').classList.add('open');
+  await renderHistoryList();
+}
+function closeHistoryModal(e){
+  if(e&&e.target!==document.getElementById('history-overlay'))return;
+  document.getElementById('history-overlay').classList.remove('open');
+}
+async function renderHistoryList(){
+  const list=document.getElementById('history-list');
+  try{
+    const history=await api('GET','/api/scan-history');
+    if(!history.length){
+      list.innerHTML='<div class="history-empty">尚無匯入紀錄<br>掃描資料夾後會自動記錄</div>';
+      return;
+    }
+    list.innerHTML=history.map(h=>`
+      <div class="history-item">
+        <div class="history-item-main">
+          <div class="history-folder">${h.folder}</div>
+          <div class="history-meta">
+            <span class="history-badge">📁 <b>${h.image_count.toLocaleString()}</b> 張圖片</span>
+            <span class="history-badge">🔄 掃描 <b>${h.scan_count}</b> 次</span>
+            <span class="history-badge">🕐 最後：${h.last_scan}</span>
+          </div>
+        </div>
+        <div class="history-actions">
+          <button class="h-btn" onclick="loadFolderFromHistory(this.dataset.folder)" data-folder="${h.folder}" title="重新載入此資料夾">↺</button>
+          <button class="h-btn del" onclick="deleteHistory(this.dataset.folder)" data-folder="${h.folder}" title="刪除此紀錄">✕</button>
+        </div>
+      </div>`).join('');
+  }catch(e){
+    list.innerHTML='<div class="history-empty">載入失敗</div>';
+  }
+}
+async function loadFolderFromHistory(folder){
+  document.getElementById('folder-input').value=folder;
+  S.folder=folder;
+  closeHistoryModal();
+  await scanFolder();
+}
+async function deleteHistory(folder){
+  if(!confirm('刪除此匯入紀錄？（不影響已匯入的圖片資料）'))return;
+  try{
+    await api('DELETE','/api/scan-history',{folder});
+    await renderHistoryList();
+    toast('✅ 已刪除紀錄');
+  }catch(e){toast('❌ '+e.message);}
+}
+// ── Analytics ─────────────────────────────────────────────────────────────────
+const CAT_COLORS = {
+  'cat-character': '#7c6aff',
+  'cat-hair':      '#a78bfa',
+  'cat-face':      '#f472b6',
+  'cat-clothing':  '#fb923c',
+  'cat-pose':      '#34d399',
+  'cat-background':'#38bdf8',
+  'cat-style':     '#fbbf24',
+  'cat-other':     '#94a3b8',
+};
+const CAT_LABELS_ZH = {
+  'cat-character':'人物','cat-hair':'髮型髮色','cat-face':'五官表情',
+  'cat-clothing':'服裝配飾','cat-pose':'姿勢構圖','cat-background':'場景背景',
+  'cat-style':'畫風品質','cat-other':'其他',
+};
+
+let analyticsSelTags = new Set();
+let analyticsActiveCat = null;
+
+async function openAnalytics(){
+  document.getElementById('analytics-overlay').classList.add('open');
+  await renderAnalyticsChart();
+}
+function closeAnalytics(e){
+  if(e&&e.target!==document.getElementById('analytics-overlay'))return;
+  document.getElementById('analytics-overlay').classList.remove('open');
+}
+
+async function renderAnalyticsChart(){
+  const area = document.getElementById('chart-area');
+  area.innerHTML = '<div style="color:var(--text3);font-size:13px">載入中...</div>';
+
+  let url = '/api/tags/all';
+  if(S.activeCollection===-1) url+='?uncollected=true';
+  else if(S.activeCollection!==null) url+=`?collection_id=${S.activeCollection}`;
+  const allTags = await api('GET', url);
+  if(!allTags.length){ area.innerHTML='<div style="color:var(--text3)">尚無 tag 資料</div>'; return; }
+
+  // Group by category
+  const groups = {};
+  Object.keys(CAT_COLORS).forEach(k=>groups[k]=[]);
+  allTags.forEach(item=>{
+    const cat = categorizeTag(item.tag);
+    (groups[cat]||(groups[cat]=[])).push(item);
+  });
+
+  const W=560, H=560, cx=W/2, cy=H/2;
+  const inner=90, outer=200, outerHover=210;
+  const cats = Object.keys(CAT_COLORS).filter(k=>(groups[k]||[]).length>0);
+  const totalCount = cats.reduce((s,k)=>s+(groups[k]||[]).reduce((ss,t)=>ss+t.count,0),0);
+
+  // Build arc data
+  let startAngle = -Math.PI/2;
+  const arcs = cats.map(cat=>{
+    const items = groups[cat]||[];
+    const catTotal = items.reduce((s,t)=>s+t.count,0);
+    const angle = (catTotal/totalCount)*2*Math.PI;
+    const arc = {cat, items, catTotal, startAngle, endAngle: startAngle+angle};
+    startAngle += angle;
+    return arc;
+  });
+
+  function polar(r, a){ return [cx+r*Math.cos(a), cy+r*Math.sin(a)]; }
+  function arcPath(r1,r2,a1,a2){
+    const [x1,y1]=polar(r1,a1),[x2,y2]=polar(r2,a1);
+    const [x3,y3]=polar(r2,a2),[x4,y4]=polar(r1,a2);
+    const lg=(a2-a1>Math.PI)?1:0;
+    return `M${x1},${y1} L${x2},${y2} A${r2},${r2},0,${lg},1,${x3},${y3} L${x4},${y4} A${r1},${r1},0,${lg},0,${x1},${y1} Z`;
+  }
+
+  // Inner donut segments (cat totals) + outer tick bars
+  let svgParts = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;max-height:520px">`;
+  svgParts += `<defs><filter id="glow"><feGaussianBlur stdDeviation="3" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+
+  // Background circle
+  svgParts += `<circle cx="${cx}" cy="${cy}" r="${inner-2}" fill="var(--surface2)" opacity="0.6"/>`;
+
+  arcs.forEach(arc=>{
+    const mid=(arc.startAngle+arc.endAngle)/2;
+    const color=CAT_COLORS[arc.cat];
+    const isActive=analyticsActiveCat===arc.cat;
+
+    // Main donut segment
+    svgParts += `<path d="${arcPath(inner,outer,arc.startAngle+0.015,arc.endAngle-0.015)}"
+      fill="${color}" opacity="${isActive?1:0.7}" stroke="var(--surface)" stroke-width="2"
+      style="cursor:pointer;transition:all 0.2s"
+      onmouseenter="showChartTooltip(event,'${CAT_LABELS_ZH[arc.cat]}','${arc.items.length} 種 tag，共 ${arc.catTotal.toLocaleString()} 次')"
+      onmouseleave="hideChartTooltip()"
+      onclick="selectAnalyticsCat('${arc.cat}')"
+    />`;
+
+    // Outer bar segments for top tags
+    const topTags = [...arc.items].sort((a,b)=>b.count-a.count).slice(0,12);
+    const maxCount = topTags[0]?.count||1;
+    const barSpan = (arc.endAngle-arc.startAngle)*0.85;
+    const barGap = barSpan/Math.max(topTags.length,1);
+    topTags.forEach((tag,i)=>{
+      const barLen = 60*(tag.count/maxCount)+10;
+      const a1 = arc.startAngle + (arc.endAngle-arc.startAngle)*0.075 + i*barGap;
+      const a2 = a1+barGap*0.75;
+      svgParts += `<path d="${arcPath(outer+6, outer+6+barLen, a1, a2)}"
+        fill="${color}" opacity="0.5" style="cursor:pointer"
+        onmouseenter="showChartTooltip(event,'${tag.tag.replace(/'/g,"\'")}','${tag.count.toLocaleString()} 張')"
+        onmouseleave="hideChartTooltip()"
+        onclick="selectAnalyticsCat('${arc.cat}')"
+      />`;
+    });
+
+    // Label
+    const labelR = outer+75;
+    const [lx,ly] = polar(labelR, mid);
+    const anchor = Math.cos(mid)>0.1?'start':Math.cos(mid)<-0.1?'end':'middle';
+    svgParts += `<text x="${lx}" y="${ly}" text-anchor="${anchor}" dominant-baseline="middle"
+      font-size="11" font-family="Inter,sans-serif" fill="${isActive?color:'var(--text2)'}"
+      font-weight="${isActive?600:400}" style="cursor:pointer;pointer-events:none">
+      ${CAT_LABELS_ZH[arc.cat]}
+    </text>`;
+
+    // Count badge
+    const badgeR = (inner+outer)/2;
+    const [bx,by] = polar(badgeR, mid);
+    svgParts += `<text x="${bx}" y="${by}" text-anchor="middle" dominant-baseline="middle"
+      font-size="9" font-family="JetBrains Mono,monospace" fill="rgba(255,255,255,0.8)"
+      style="pointer-events:none">${arc.items.length}</text>`;
+  });
+
+  // Center text
+  svgParts += `<text x="${cx}" y="${cy-10}" text-anchor="middle" font-size="22" font-weight="700"
+    font-family="Inter,sans-serif" fill="var(--text)">${allTags.length}</text>`;
+  svgParts += `<text x="${cx}" y="${cy+12}" text-anchor="middle" font-size="11"
+    font-family="Inter,sans-serif" fill="var(--text3)">種 Tags</text>`;
+
+  svgParts += '</svg>';
+  area.innerHTML = svgParts;
+
+  // If a cat is already active, re-render its list
+  if(analyticsActiveCat) renderTagDetailList(groups[analyticsActiveCat]||[], analyticsActiveCat);
+  renderAnalyticsSelTags();
+}
+
+function selectAnalyticsCat(cat){
+  analyticsActiveCat = cat;
+  const allTagsData = window._allTags||[];
+  const groups={};
+  Object.keys(CAT_COLORS).forEach(k=>groups[k]=[]);
+  allTagsData.forEach(item=>{
+    const c=categorizeTag(item.tag);
+    (groups[c]||(groups[c]=[])).push(item);
+  });
+  renderTagDetailList(groups[cat]||[], cat);
+  renderAnalyticsChart(); // re-render to highlight active
+}
+
+function renderTagDetailList(items, cat){
+  const sorted=[...items].sort((a,b)=>b.count-a.count);
+  const maxCount=sorted[0]?.count||1;
+  const color=CAT_COLORS[cat];
+  document.getElementById('detail-cat-title').textContent=CAT_LABELS_ZH[cat]||cat;
+  document.getElementById('detail-cat-sub').textContent=`${sorted.length} 種 tag`;
+  document.getElementById('tag-detail-list').innerHTML=sorted.map(item=>{
+    const zh=getZh(item.tag);
+    const barW=Math.max(4,Math.round(80*(item.count/maxCount)));
+    const sel=analyticsSelTags.has(item.tag);
+    return`<div class="tag-item ${sel?'selected':''}" onclick="toggleAnalyticsTag('${item.tag.replace(/'/g,"\'")}')">
+      <div class="tag-item-bar" style="width:${barW}px;background:${color}"></div>
+      <span class="tag-item-name">${item.tag}</span>
+      ${zh?`<span class="tag-item-zh">${zh}</span>`:''}
+      <span class="tag-item-count">${item.count}</span>
+    </div>`;
+  }).join('');
+}
+
+function toggleAnalyticsTag(tag){
+  if(analyticsSelTags.has(tag)) analyticsSelTags.delete(tag);
+  else analyticsSelTags.add(tag);
+  renderAnalyticsSelTags();
+  // update list highlight
+  document.querySelectorAll('.tag-item').forEach(el=>{
+    const name=el.querySelector('.tag-item-name')?.textContent;
+    if(name) el.classList.toggle('selected', analyticsSelTags.has(name));
+  });
+}
+
+function renderAnalyticsSelTags(){
+  const wrap=document.getElementById('sel-tags-wrap');
+  const hint=document.getElementById('sel-tags-hint');
+  if(!analyticsSelTags.size){
+    if(hint)hint.style.display='';
+    wrap.innerHTML='<span id="sel-tags-hint">點擊 tag 加入搜索...</span>';
+    return;
+  }
+  wrap.innerHTML=[...analyticsSelTags].map(tag=>`
+    <div class="sel-tag-chip">
+      ${tag}
+      <span class="x" onclick="event.stopPropagation();toggleAnalyticsTag('${tag.replace(/'/g,"\'")}')">×</span>
+    </div>`).join('');
+}
+
+function clearAnalyticsSel(){
+  analyticsSelTags.clear();
+  renderAnalyticsSelTags();
+  document.querySelectorAll('.tag-item').forEach(el=>el.classList.remove('selected'));
+}
+
+function applyAnalyticsSearch(){
+  if(!analyticsSelTags.size) return;
+  const terms=[...analyticsSelTags].join(',');
+  document.getElementById('search-input').value=terms;
+  closeAnalytics();
+  S.page=1;
+  refreshGallery();
+}
+
+function showChartTooltip(e, title, sub){
+  const tt=document.getElementById('chart-tooltip');
+  tt.innerHTML=`<b>${title}</b><br><span style="color:var(--text3)">${sub}</span>`;
+  tt.style.display='block';
+  tt.style.left=(e.clientX+14)+'px';
+  tt.style.top=(e.clientY-10)+'px';
+}
+function hideChartTooltip(){
+  document.getElementById('chart-tooltip').style.display='none';
+}
+
+function toast(msg){
+  const el=document.createElement('div');el.className='toast';el.textContent=msg;
+  document.body.appendChild(el);setTimeout(()=>el.remove(),3500);
+}
+
+init();
+</script>
+</body>
+</html>
