@@ -355,8 +355,182 @@ function getPaginationPages(cur, total) {
 function onCardClick(e, card, img, idx) {}
 function onCardRightClick(e, card, img) {}
 
-// ── Tag Filter Tree (stub, full impl in Task 6) ────────
-function buildTagTree() {}
+// ── Search ───────────────────────────────────
+const TAG_ZH = {};
+
+function parseSearchQuery(raw) {
+  const tokens = raw.trim().split(/\s+AND\s+|\s+/i).filter(Boolean);
+  const include = [];
+  const exclude = [];
+  tokens.forEach(tok => {
+    if (tok.toUpperCase().startsWith('NOT ')) {
+      exclude.push(normalizeTag(tok.slice(4).trim()));
+    } else if (tok.startsWith('-')) {
+      exclude.push(normalizeTag(tok.slice(1)));
+    } else {
+      const normalized = normalizeTag(tok);
+      if (normalized) include.push(normalized);
+    }
+  });
+  return { include, exclude };
+}
+
+function normalizeTag(raw) {
+  const zh = raw.trim();
+  if (TAG_ZH[zh]) return TAG_ZH[zh];
+  return zh.toLowerCase().replace(/ /g, '_');
+}
+
+function bindSearchEvents() {
+  const input   = document.getElementById('searchInput');
+  const suggest = document.getElementById('searchSuggest');
+
+  input.addEventListener('input', () => {
+    const val = input.value.trim();
+    const lastTerm = val.split(/\s+/).pop();
+    if (!lastTerm || lastTerm.length < 1) {
+      suggest.classList.add('hidden');
+      return;
+    }
+    const normalized = normalizeTag(lastTerm);
+    const matches = state.allTagCounts
+      .filter(t => t.tag.includes(normalized))
+      .slice(0, 8);
+
+    if (!matches.length) { suggest.classList.add('hidden'); return; }
+
+    suggest.innerHTML = matches.map((t, i) => `
+      <div class="ss-item${i === 0 ? ' active' : ''}" data-tag="${t.tag}">
+        <span class="ss-tag">${t.tag}</span>
+        <span class="ss-cnt">× ${t.count}</span>
+      </div>
+    `).join('');
+    suggest.classList.remove('hidden');
+
+    suggest.querySelectorAll('.ss-item').forEach(item => {
+      item.addEventListener('click', () => acceptSuggestion(input, item.dataset.tag, suggest));
+    });
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const first = suggest.querySelector('.ss-item');
+      if (first) acceptSuggestion(input, first.dataset.tag, suggest);
+    }
+    if (e.key === 'Enter') {
+      suggest.classList.add('hidden');
+      executeSearch(input.value);
+    }
+    if (e.key === 'Escape') suggest.classList.add('hidden');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!input.contains(e.target) && !suggest.contains(e.target))
+      suggest.classList.add('hidden');
+  });
+}
+
+function acceptSuggestion(input, tag, suggest) {
+  const parts = input.value.trim().split(/\s+/);
+  parts[parts.length - 1] = tag;
+  input.value = parts.join(' ') + ' ';
+  suggest.classList.add('hidden');
+  input.focus();
+}
+
+function executeSearch(raw) {
+  const { include, exclude } = parseSearchQuery(raw);
+  state.searchTags  = include;
+  state.excludeTags = exclude;
+  state.currentPage = 1;
+  loadGallery();
+}
+
+// ── Tag Filter Tree ───────────────────────────
+const TAG_CATEGORIES = {
+  CHARACTER:  ['1girl','2girls','solo','multiple_girls','boy','1boy'],
+  HAIR:       ['long_hair','short_hair','twintails','ponytail','blonde_hair','brown_hair','black_hair','blue_hair','red_hair','white_hair','pink_hair','silver_hair'],
+  EXPRESSION: ['smile','open_mouth','blush','closed_eyes','tears','angry','serious','expressionless'],
+  OUTFIT:     ['dress','skirt','school_uniform','swimsuit','bikini','shirt','jacket','coat'],
+  SCENE:      ['outdoors','indoors','sky','ocean','forest','city','classroom','bedroom'],
+  QUALITY:    ['masterpiece','best_quality','highres','realistic','anime','detailed'],
+};
+
+function buildTagTree() {
+  const treeEl = document.getElementById('tagTree');
+  treeEl.innerHTML = '';
+
+  Object.entries(TAG_CATEGORIES).forEach(([cat, defaultTags]) => {
+    const catTags = state.allTagCounts
+      .filter(t => defaultTags.includes(t.tag))
+      .slice(0, 12);
+
+    if (!catTags.length) return;
+
+    const section = document.createElement('div');
+    section.className = 'tag-category';
+    section.innerHTML = `
+      <div class="tag-cat-header">${cat} <span>▾</span></div>
+      <div class="tag-cat-list">
+        ${catTags.map(t => `
+          <div class="ftag${state.searchTags.includes(t.tag) ? ' active' : ''}"
+               data-tag="${t.tag}">
+            ${t.tag} <span class="ftag-cnt">${t.count}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+
+    section.querySelectorAll('.ftag').forEach(ftag => {
+      ftag.addEventListener('click', () => toggleFilterTag(ftag.dataset.tag, ftag));
+    });
+
+    treeEl.appendChild(section);
+  });
+}
+
+function toggleFilterTag(tag, el) {
+  const idx = state.searchTags.indexOf(tag);
+  if (idx >= 0) {
+    state.searchTags.splice(idx, 1);
+    el.classList.remove('active');
+  } else {
+    state.searchTags.push(tag);
+    el.classList.add('active');
+  }
+  updateFilterSummary();
+  state.currentPage = 1;
+  loadGallery();
+}
+
+function updateFilterSummary() {
+  const exprEl  = document.getElementById('filterExpr');
+  const clearEl = document.getElementById('btnClearFilter');
+  const searchEl = document.getElementById('searchInput');
+
+  if (state.searchTags.length) {
+    exprEl.textContent  = state.searchTags.join(' AND ');
+    searchEl.value      = state.searchTags.join(' AND ');
+    clearEl.classList.remove('hidden');
+  } else {
+    exprEl.textContent = '— 無 —';
+    searchEl.value     = '';
+    clearEl.classList.add('hidden');
+  }
+}
+
+function bindFilterClearEvent() {
+  document.getElementById('btnClearFilter').addEventListener('click', () => {
+    state.searchTags  = [];
+    state.excludeTags = [];
+    document.getElementById('searchInput').value = '';
+    document.querySelectorAll('.ftag.active').forEach(f => f.classList.remove('active'));
+    updateFilterSummary();
+    state.currentPage = 1;
+    loadGallery();
+  });
+}
 
 // ── bindEvents stub (full impl in Task 9) ─────────────
 function bindEvents() {}
