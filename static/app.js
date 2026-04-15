@@ -705,6 +705,192 @@ function bindFilterClearEvent() {
   });
 }
 
+// ── Detail Panel ──────────────────────────────
+async function openDetailPanel(imageId) {
+  try {
+    const img = await GET(`/api/image/${imageId}`);
+    state.detImageId      = imageId;
+    state.detOriginalTags = [...(img.tags ?? [])];
+    state.detStagedRemove.clear();
+    state.detStagedAdd    = [];
+    renderDetailPanel(img);
+    document.getElementById('detPanel').classList.remove('hidden');
+  } catch {
+    toast('載入圖片資訊失敗', 'error');
+  }
+}
+
+function renderDetailPanel(img) {
+  const imgEl = document.getElementById('detImg');
+  imgEl.src   = `/api/full/${img.id}`;
+  document.getElementById('detTitle').textContent = `◈ ${(img.path ?? '').split(/[\\/]/).pop()}`;
+
+  const filename = (img.path ?? '').split(/[\\/]/).pop();
+  const avgConf  = img.avg_confidence != null ? img.avg_confidence.toFixed(2) : '—';
+  document.getElementById('detMeta').innerHTML = `
+    <div class="det-meta-row"><span class="det-meta-key">FILE</span><span class="det-meta-val" title="${filename}">${filename.slice(0, 24)}${filename.length > 24 ? '…' : ''}</span></div>
+    <div class="det-meta-row"><span class="det-meta-key">TAGS</span><span class="det-meta-val">${(img.tags ?? []).length}</span></div>
+    <div class="det-meta-row"><span class="det-meta-key">CONF AVG</span><span class="det-meta-val">${avgConf}</span></div>
+    <div class="det-meta-row"><span class="det-meta-key">TAGGED</span><span class="det-meta-val">${img.tagged ? 'YES' : 'NO'}</span></div>
+  `;
+
+  renderDetTags(img.tags ?? []);
+}
+
+function renderDetTags(tags) {
+  const list = document.getElementById('detTagList');
+  list.innerHTML = '';
+  document.getElementById('detTagCount').textContent = tags.length + state.detStagedAdd.length;
+
+  tags.forEach(tag => {
+    const el = document.createElement('div');
+    const isRemove = state.detStagedRemove.has(tag);
+    el.className = `dtag${isRemove ? ' staged-remove' : ''}`;
+    el.dataset.tag = tag;
+    el.innerHTML = `${tag} <span class="dtag-del">✕</span>`;
+    el.querySelector('.dtag-del').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (state.detStagedRemove.has(tag)) {
+        state.detStagedRemove.delete(tag);
+        el.classList.remove('staged-remove');
+      } else {
+        state.detStagedRemove.add(tag);
+        el.classList.add('staged-remove');
+      }
+    });
+    list.appendChild(el);
+  });
+
+  state.detStagedAdd.forEach(tag => {
+    const el = document.createElement('div');
+    el.className = 'dtag staged-add';
+    el.dataset.tag = tag;
+    el.innerHTML = `${tag} <span class="dtag-del">✕</span>`;
+    el.querySelector('.dtag-del').addEventListener('click', (e) => {
+      e.stopPropagation();
+      state.detStagedAdd = state.detStagedAdd.filter(t => t !== tag);
+      renderDetTags(state.detOriginalTags);
+    });
+    list.appendChild(el);
+  });
+}
+
+function addStagedTag(tag) {
+  if (state.detOriginalTags.includes(tag) || state.detStagedAdd.includes(tag)) return;
+  state.detStagedAdd.push(tag);
+  renderDetTags(state.detOriginalTags);
+}
+
+async function saveDetPanel() {
+  if (state.detImageId === null) return;
+
+  const finalTags = [
+    ...state.detOriginalTags.filter(t => !state.detStagedRemove.has(t)),
+    ...state.detStagedAdd,
+  ];
+
+  try {
+    await PUT('/api/image/tags', { image_id: state.detImageId, tags: finalTags });
+    state.detOriginalTags = finalTags;
+    state.detStagedRemove.clear();
+    state.detStagedAdd = [];
+    renderDetTags(finalTags);
+    toast('儲存成功');
+    loadGallery();
+  } catch {
+    toast('儲存失敗', 'error');
+  }
+}
+
+function bindDetAddInput() {
+  const input   = document.getElementById('detAddInput');
+  const suggest = document.getElementById('detAddSuggest');
+
+  input.addEventListener('input', () => {
+    const val = normalizeTag(input.value.trim());
+    if (!val) { suggest.classList.add('hidden'); return; }
+
+    const matches = state.allTagCounts
+      .filter(t => t.tag.includes(val) && !state.detOriginalTags.includes(t.tag) && !state.detStagedAdd.includes(t.tag))
+      .slice(0, 6);
+
+    if (!matches.length) { suggest.classList.add('hidden'); return; }
+
+    suggest.innerHTML = matches.map((t, i) => `
+      <div class="das-item${i === 0 ? ' active' : ''}" data-tag="${t.tag}">
+        <span>${t.tag}</span><span class="ss-cnt">× ${t.count}</span>
+      </div>
+    `).join('');
+    suggest.classList.remove('hidden');
+
+    suggest.querySelectorAll('.das-item').forEach(item => {
+      item.addEventListener('click', () => {
+        addStagedTag(item.dataset.tag);
+        input.value = '';
+        suggest.classList.add('hidden');
+      });
+    });
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const tag = normalizeTag(input.value.trim());
+      if (tag) { addStagedTag(tag); input.value = ''; suggest.classList.add('hidden'); }
+    }
+    if (e.key === 'Escape') suggest.classList.add('hidden');
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const first = suggest.querySelector('.das-item');
+      if (first) {
+        addStagedTag(first.dataset.tag);
+        input.value = '';
+        suggest.classList.add('hidden');
+      }
+    }
+  });
+}
+
+function bindDetPanelEvents() {
+  document.getElementById('detClose').addEventListener('click', () => {
+    if (state.detStagedRemove.size || state.detStagedAdd.length) {
+      if (!confirm('有未儲存的 tag 變更，確定關閉？')) return;
+    }
+    document.getElementById('detPanel').classList.add('hidden');
+    state.detImageId = null;
+  });
+
+  document.getElementById('detBtnSave').addEventListener('click', saveDetPanel);
+
+  document.getElementById('detBtnReveal').addEventListener('click', async () => {
+    if (state.detImageId === null) return;
+    try { await GET(`/api/reveal/${state.detImageId}`); } catch {}
+  });
+
+  document.getElementById('detImg').addEventListener('click', () => {
+    const lb = document.getElementById('lightbox');
+    document.getElementById('lightboxImg').src = document.getElementById('detImg').src;
+    lb.classList.remove('hidden');
+  });
+
+  document.getElementById('lightboxClose').addEventListener('click', () => {
+    document.getElementById('lightbox').classList.add('hidden');
+  });
+
+  document.getElementById('lightbox').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget)
+      document.getElementById('lightbox').classList.add('hidden');
+  });
+
+  bindDetAddInput();
+}
+
+async function navigateDetail(dir) {
+  const cards = [...document.querySelectorAll('.card')];
+  const cur = cards.findIndex(c => Number(c.dataset.id) === state.detImageId);
+  const next = cards[cur + dir];
+  if (next) openDetailPanel(Number(next.dataset.id));
+}
+
 // ── bindEvents stub (full impl in Task 9) ─────────────
 // Task 9 must call: bindThemeEvents, bindSidebarEvents, bindScanEvents,
 // bindSearchEvents, bindFilterClearEvent, bindContextMenu,
