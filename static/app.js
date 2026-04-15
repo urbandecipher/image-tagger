@@ -359,17 +359,21 @@ function onCardRightClick(e, card, img) {}
 const TAG_ZH = {};
 
 function parseSearchQuery(raw) {
-  const tokens = raw.trim().split(/\s+AND\s+|\s+/i).filter(Boolean);
   const include = [];
   const exclude = [];
-  tokens.forEach(tok => {
-    if (tok.toUpperCase().startsWith('NOT ')) {
-      exclude.push(normalizeTag(tok.slice(4).trim()));
-    } else if (tok.startsWith('-')) {
-      exclude.push(normalizeTag(tok.slice(1)));
-    } else {
-      const normalized = normalizeTag(tok);
-      if (normalized) include.push(normalized);
+  const parts = raw.trim().split(/\s+AND\s+/i);
+  parts.forEach(part => {
+    const tokens = part.trim().split(/\s+/);
+    for (let i = 0; i < tokens.length; i++) {
+      const tok = tokens[i];
+      if (tok.toUpperCase() === 'NOT' && i + 1 < tokens.length) {
+        exclude.push(normalizeTag(tokens[++i]));
+      } else if (tok.startsWith('-')) {
+        exclude.push(normalizeTag(tok.slice(1)));
+      } else {
+        const normalized = normalizeTag(tok);
+        if (normalized) include.push(normalized);
+      }
     }
   });
   return { include, exclude };
@@ -497,6 +501,7 @@ function toggleFilterTag(tag, el) {
     el.classList.remove('active');
   } else {
     state.searchTags.push(tag);
+    state.excludeTags = [];
     el.classList.add('active');
   }
   updateFilterSummary();
@@ -533,6 +538,10 @@ function bindFilterClearEvent() {
 }
 
 // ── bindEvents stub (full impl in Task 9) ─────────────
+// Task 9 must call: bindThemeEvents, bindSidebarEvents, bindScanEvents,
+// bindSearchEvents, bindFilterClearEvent, bindContextMenu,
+// bindDetPanelEvents, bindBulkEvents, bindLasso, bindKeyboardShortcuts,
+// bindAddCollectionEvent
 function bindEvents() {}
 
 // ── Init ──────────────────────────────────────
