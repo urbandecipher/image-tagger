@@ -9,12 +9,14 @@ from typing import Optional
 import uvicorn
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from database import Database
 from tagger import WDTagger
 
 app = FastAPI(title="Image Tagger")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 db = Database("tags.db")
 tagger = WDTagger()
 
@@ -24,12 +26,14 @@ CONFIG_FILE = Path("config.json")
 
 # ── Config ────────────────────────────────────────────────────────────────────
 def load_config() -> dict:
+    defaults = {"last_folder": "", "threshold": 0.35, "theme": "tactical"}
     if CONFIG_FILE.exists():
         try:
-            return json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
+            data = json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
+            return {**defaults, **data}
         except Exception:
             pass
-    return {"last_folder": "", "threshold": 0.35}
+    return defaults
 
 def save_config(data: dict):
     CONFIG_FILE.write_text(
@@ -74,6 +78,7 @@ class BulkCollectionRequest(BaseModel):
 class ConfigRequest(BaseModel):
     last_folder: str = ""
     threshold: float = 0.35
+    theme: str = "tactical"
 
 class AddCollectionRequest(BaseModel):
     name: str
@@ -95,7 +100,11 @@ async def get_config():
 
 @app.post("/api/config")
 async def set_config(req: ConfigRequest):
-    save_config({"last_folder": req.last_folder, "threshold": req.threshold})
+    cfg = load_config()
+    cfg["last_folder"] = req.last_folder
+    cfg["threshold"] = req.threshold
+    cfg["theme"] = req.theme
+    save_config(cfg)
     return {"status": "ok"}
 
 @app.get("/api/stats")
