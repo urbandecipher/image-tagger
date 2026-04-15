@@ -461,8 +461,8 @@ function bindLasso() {
   document.addEventListener('mouseup', () => {
     if (!state.lassoActive) return;
     state.lassoActive = false;
-    lasso.classList.add('hidden');
     selectCardsInLasso(lasso);
+    lasso.classList.add('hidden');
     updateSelectCount();
   });
 }
