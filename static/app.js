@@ -893,12 +893,256 @@ async function navigateDetail(dir) {
   if (next) openDetailPanel(Number(next.dataset.id));
 }
 
-// ── bindEvents stub (full impl in Task 9) ─────────────
-// Task 9 must call: bindThemeEvents, bindSidebarEvents, bindScanEvents,
-// bindSearchEvents, bindFilterClearEvent, bindContextMenu,
-// bindDetPanelEvents, bindBulkEvents, bindLasso, bindKeyboardShortcuts,
-// bindAddCollectionEvent
-function bindEvents() {}
+// ── Sidebar ───────────────────────────────────
+function bindSidebarEvents() {
+  document.querySelectorAll('.sb-icon[data-mode]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.mode;
+      document.querySelectorAll('.sb-icon[data-mode]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.sb-panel').forEach(p => p.classList.add('hidden'));
+      const panel = document.querySelector(`.sb-panel[data-panel="${mode}"]`);
+      if (panel) panel.classList.remove('hidden');
+      document.getElementById('sidebar').dataset.mode = mode;
+      document.getElementById('sidebar').classList.remove('collapsed');
+    });
+  });
+
+  document.getElementById('sbCollapseBtn').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+  });
+
+  ['confSlider', 'confSlider2'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', () => {
+      const val = parseFloat(el.value);
+      state.threshold = val;
+      const labelId = i === 0 ? 'confValue' : 'confValue2';
+      document.getElementById(labelId).textContent = val;
+      const otherId    = i === 0 ? 'confSlider2' : 'confSlider';
+      const otherLabel = i === 0 ? 'confValue2'  : 'confValue';
+      const other = document.getElementById(otherId);
+      if (other) { other.value = val; document.getElementById(otherLabel).textContent = val; }
+    });
+  });
+
+  document.getElementById('gridWidthSlider').addEventListener('input', (e) => {
+    const val = Number(e.target.value);
+    state.cardMinWidth = val;
+    document.getElementById('gridWidthValue').textContent = val;
+    document.getElementById('gallery').style.setProperty('--card-min-width', `${val}px`);
+  });
+
+  document.getElementById('perPageSelect').addEventListener('change', (e) => {
+    state.perPage = Number(e.target.value);
+    state.currentPage = 1;
+    loadGallery();
+  });
+}
+
+// ── Scan ──────────────────────────────────────
+function bindScanEvents() {
+  document.getElementById('btnScan').addEventListener('click', async () => {
+    const folder = document.getElementById('scanFolderInput').value.trim();
+    if (!folder) { toast('請輸入資料夾路徑', 'error'); return; }
+    try {
+      const res = await POST('/api/scan', { folder });
+      state.lastFolder = folder;
+      document.getElementById('folderPath').textContent = folder;
+      POST('/api/config', { last_folder: folder, threshold: state.threshold, theme: state.theme }).catch(() => {});
+      toast(`掃描完成：${res.new ?? 0} 張新圖，共 ${res.total ?? 0} 張`);
+      await loadCollections();
+      await loadAllTags();
+      await loadGallery();
+      document.getElementById('btnTag').disabled = false;
+    } catch {
+      toast('掃描失敗', 'error');
+    }
+  });
+
+  document.getElementById('btnScanHeader').addEventListener('click', () => {
+    document.querySelector('.sb-icon[data-mode="scan"]').click();
+  });
+
+  document.getElementById('btnTag').addEventListener('click', async () => {
+    const folder = document.getElementById('scanFolderInput').value.trim();
+    if (!folder) return;
+    try {
+      await POST('/api/tag', { folder, threshold: state.threshold });
+      toast('打標開始，請稍候...');
+      pollTagProgress();
+    } catch {
+      toast('打標啟動失敗', 'error');
+    }
+  });
+
+  document.getElementById('btnHistory').addEventListener('click', async () => {
+    try {
+      const data = await GET('/api/scan-history');
+      const list = document.getElementById('historyList');
+      list.innerHTML = data.map(h => `
+        <div style="padding:6px 0;border-bottom:1px solid var(--border2);font-family:JetBrains Mono,monospace;font-size:9px;">
+          <div style="color:var(--text);">${h.folder}</div>
+          <div style="color:var(--text3);">${h.last_scan ?? ''} · ${h.image_count ?? 0} 張 · 掃描 ${h.scan_count ?? 0} 次</div>
+        </div>
+      `).join('') || '<div style="color:var(--text3);font-size:10px;">無記錄</div>';
+      document.getElementById('modalOverlay').classList.remove('hidden');
+      document.getElementById('historyModal').classList.remove('hidden');
+      document.getElementById('historyClose').onclick = closeModal;
+      document.getElementById('modalOverlay').onclick  = closeModal;
+    } catch {
+      toast('載入歷史失敗', 'error');
+    }
+  });
+}
+
+function pollTagProgress() {
+  const bar  = document.getElementById('tagProgressBar');
+  const fill = document.getElementById('tagProgressFill');
+  bar.classList.remove('hidden');
+
+  const timer = setInterval(async () => {
+    try {
+      const p = await GET('/api/tag/progress');
+      const pct = p.total > 0 ? Math.round((p.done / p.total) * 100) : 0;
+      fill.style.width = `${pct}%`;
+      if (!p.running) {
+        clearInterval(timer);
+        bar.classList.add('hidden');
+        fill.style.width = '0%';
+        toast(`打標完成：${p.done} 張`);
+        loadGallery();
+        loadStats();
+      }
+    } catch { clearInterval(timer); }
+  }, 1500);
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.add('hidden');
+  document.querySelectorAll('.modal-dialog').forEach(m => m.classList.add('hidden'));
+}
+
+// ── Bulk Operations ───────────────────────────
+function bindBulkEvents() {
+  document.getElementById('btnSelectMode').addEventListener('click', () => {
+    state.selectMode ? exitSelectMode() : enterSelectMode();
+  });
+  document.getElementById('btnCancelSelect').addEventListener('click', exitSelectMode);
+
+  document.getElementById('btnBulkDelete').addEventListener('click', () => {
+    if (!state.selectedIds.size) return;
+    if (confirm(`刪除 ${state.selectedIds.size} 張圖片？此操作不可還原。`)) bulkDelete();
+  });
+
+  document.getElementById('btnBulkAssign').addEventListener('click', () => {
+    if (!state.selectedIds.size) return;
+    const names = state.collections.map(c => `${c.id}: ${c.name}`).join('\n');
+    const input = prompt(`輸入 Collection ID:\n${names}`);
+    if (input === null) return;
+    const colId = input.trim() === '' ? null : Number(input.trim());
+    POST('/api/images/set-collection', { image_ids: [...state.selectedIds], collection_id: colId })
+      .then(() => { toast('指派完成'); exitSelectMode(); loadGallery(); loadCollections(); })
+      .catch(() => toast('指派失敗', 'error'));
+  });
+
+  document.getElementById('btnBulkMove').addEventListener('click', () => {
+    if (!state.selectedIds.size) return;
+    const dest = prompt('目標資料夾路徑：');
+    if (!dest) return;
+    POST('/api/images/bulk-move', { image_ids: [...state.selectedIds], dest_folder: dest })
+      .then(r => { toast(`已移動 ${r.moved ?? 0} 張`); exitSelectMode(); loadGallery(); })
+      .catch(() => toast('移動失敗', 'error'));
+  });
+}
+
+async function bulkDelete() {
+  try {
+    const ids = [...state.selectedIds];
+    await POST('/api/images/bulk-delete', { image_ids: ids });
+    toast(`已刪除 ${ids.length} 張`);
+    exitSelectMode();
+    loadGallery();
+    loadStats();
+  } catch {
+    toast('刪除失敗', 'error');
+  }
+}
+
+// ── Keyboard Shortcuts ────────────────────────
+function bindKeyboardShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    const tag = e.target.tagName;
+    const inInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+
+    if (e.key === 'Escape') {
+      if (!document.getElementById('lightbox').classList.contains('hidden')) {
+        document.getElementById('lightbox').classList.add('hidden'); return;
+      }
+      if (!document.getElementById('ctxMenu').classList.contains('hidden')) {
+        hideCtxMenu(); return;
+      }
+      if (state.selectMode) { exitSelectMode(); return; }
+      if (!document.getElementById('detPanel').classList.contains('hidden')) {
+        document.getElementById('detClose').click(); return;
+      }
+    }
+
+    if (inInput) return;
+
+    if (e.ctrlKey && e.key === 'a') {
+      e.preventDefault();
+      if (!state.selectMode) enterSelectMode();
+      document.querySelectorAll('.card').forEach(c => {
+        state.selectedIds.add(Number(c.dataset.id));
+        c.classList.add('selected');
+      });
+      updateSelectCount();
+    }
+
+    if (e.key === 'Delete' && state.selectMode && state.selectedIds.size > 0) {
+      if (confirm(`刪除 ${state.selectedIds.size} 張圖片？此操作不可還原。`)) bulkDelete();
+    }
+
+    if (e.key === 'f' || e.key === 'F') {
+      document.getElementById('sidebar').classList.toggle('collapsed');
+    }
+
+    if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && state.detImageId !== null) {
+      navigateDetail(e.key === 'ArrowLeft' ? -1 : 1);
+    }
+  });
+}
+
+// ── Add Collection ────────────────────────────
+function bindAddCollectionEvent() {
+  document.getElementById('btnAddCollection').addEventListener('click', async () => {
+    const name = prompt('新 Collection 名稱：');
+    if (!name) return;
+    try {
+      await POST('/api/collections', { name });
+      await loadCollections();
+      toast(`Collection "${name}" 已建立`);
+    } catch {
+      toast('建立失敗', 'error');
+    }
+  });
+}
+
+function bindEvents() {
+  bindThemeEvents();
+  bindSidebarEvents();
+  bindScanEvents();
+  bindSearchEvents();
+  bindFilterClearEvent();
+  bindContextMenu();
+  bindDetPanelEvents();
+  bindBulkEvents();
+  bindLasso();
+  bindKeyboardShortcuts();
+  bindAddCollectionEvent();
+}
 
 // ── Init ──────────────────────────────────────
 async function init() {
