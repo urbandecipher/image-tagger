@@ -6,7 +6,8 @@
   <title>Image Tag Studio</title>
   <link rel="icon" href="/static/icon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300..800&display=swap">
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -62,8 +63,12 @@
           <div class="sb-label">CONFIDENCE // <span id="confValue">0.35</span></div>
           <input type="range" class="conf-slider" id="confSlider" min="0.1" max="0.9" step="0.05" value="0.35">
         </div>
-        <div class="sb-section sb-tag-tree" id="tagTree">
-          <!-- 由 JS 動態注入 tag 分類 -->
+        <div class="sb-section sb-tag-tree">
+          <div class="sb-label">ALL TAGS // <span id="tagCountBadge">0</span></div>
+          <input type="text" class="sb-input" id="tagSearchInput" placeholder="搜尋 tag...">
+          <div class="tag-all-list" id="tagAllList">
+            <!-- 由 JS 動態注入 -->
+          </div>
         </div>
         <div class="sb-filter-summary" id="filterSummary">
           <div class="sb-label">ACTIVE FILTERS</div>
@@ -189,6 +194,7 @@
       </div>
       <div class="det-footer">
         <button class="btn-ghost" id="detBtnReveal" title="在資源管理員開啟">↗ REVEAL</button>
+        <button class="btn-danger" id="detBtnDelete">DELETE</button>
         <button class="btn-primary" id="detBtnSave">SAVE</button>
       </div>
     </aside>
@@ -224,6 +230,6 @@
   <!-- Toast -->
   <div class="toast-container" id="toastContainer"></div>
 
-  <script src="/static/app.js"></script>
+  <script src="/static/app.js?v=4"></script>
 </body>
 </html>
