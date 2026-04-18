@@ -1,75 +1,80 @@
 /* ═══════════════════════════════════════════════
-   IMAGE TAG STUDIO v2 — style.css
-   Theme: tactical (default) | hud | cyber
+   IMAGE TAG STUDIO — Lovable Design System
 ═══════════════════════════════════════════════ */
 
-/* ── TACTICAL RADAR (default) ── */
+/* ── LOVABLE WARM (tactical) ── */
 [data-theme="tactical"] {
-  --bg:          #060a06;
-  --surface:     #0a0f0a;
-  --surface2:    #080c08;
-  --border:      rgba(0, 255, 128, 0.18);
-  --border2:     rgba(0, 255, 128, 0.08);
-  --accent:      #00ff80;
-  --accent-dim:  rgba(0, 255, 128, 0.12);
-  --accent-med:  rgba(0, 255, 128, 0.25);
-  --accent-glow: 0 0 8px rgba(0, 255, 128, 0.3);
-  --text:        #00ff80;
-  --text2:       rgba(0, 255, 128, 0.55);
-  --text3:       rgba(0, 255, 128, 0.3);
-  --danger:      #ff4040;
-  --danger-dim:  rgba(255, 64, 64, 0.15);
-  --shadow:      0 4px 20px rgba(0, 0, 0, 0.6);
-  --pattern-bg:  repeating-linear-gradient(
-    45deg, transparent, transparent 20px,
-    rgba(0,255,128,0.02) 20px, rgba(0,255,128,0.02) 21px
-  );
+  --bg:              #f7f4ed;
+  --surface:         #f7f4ed;
+  --surface2:        #f2efe8;
+  --border:          #eceae4;
+  --border2:         rgba(28, 28, 28, 0.08);
+  --accent:          #1c1c1c;
+  --accent-dim:      rgba(28, 28, 28, 0.04);
+  --accent-med:      rgba(28, 28, 28, 0.15);
+  --accent-glow:     0 4px 12px rgba(0, 0, 0, 0.10);
+  --text:            #1c1c1c;
+  --text2:           rgba(28, 28, 28, 0.82);
+  --text3:           #5f5f5d;
+  --danger:          #c0392b;
+  --danger-dim:      rgba(192, 57, 43, 0.08);
+  --shadow:          0 4px 20px rgba(0, 0, 0, 0.08);
+  --pattern-bg:      none;
+  --btn-primary-bg:  #1c1c1c;
+  --btn-primary-txt: #fcfbf8;
+  --btn-inset:       rgba(255,255,255,0.2) 0px 0.5px 0px 0px inset,
+                     rgba(0,0,0,0.2) 0px 0px 0px 0.5px inset,
+                     rgba(0,0,0,0.05) 0px 1px 2px 0px;
 }
 
-/* ── DEATH STRANDING HUD ── */
+/* ── LOVABLE DUSK (hud) ── */
 [data-theme="hud"] {
-  --bg:          #080c12;
-  --surface:     #0c1018;
-  --surface2:    #0a0d14;
-  --border:      rgba(255, 140, 0, 0.22);
-  --border2:     rgba(255, 140, 0, 0.08);
-  --accent:      #ff8c00;
-  --accent-dim:  rgba(255, 140, 0, 0.10);
-  --accent-med:  rgba(255, 140, 0, 0.25);
-  --accent-glow: 0 0 8px rgba(255, 140, 0, 0.35);
-  --text:        #ff8c00;
-  --text2:       rgba(255, 140, 0, 0.55);
-  --text3:       rgba(255, 140, 0, 0.3);
-  --danger:      #ff4040;
-  --danger-dim:  rgba(255, 64, 64, 0.15);
-  --shadow:      0 4px 20px rgba(0, 0, 0, 0.65);
-  --pattern-bg:  repeating-linear-gradient(
-    0deg, transparent, transparent 28px,
-    rgba(255,140,0,0.04) 28px, rgba(255,140,0,0.04) 29px
-  );
+  --bg:              #f5f0e4;
+  --surface:         #f5f0e4;
+  --surface2:        #ede9dd;
+  --border:          #e5dfd0;
+  --border2:         rgba(28, 28, 28, 0.08);
+  --accent:          #1c1c1c;
+  --accent-dim:      rgba(28, 28, 28, 0.04);
+  --accent-med:      rgba(28, 28, 28, 0.15);
+  --accent-glow:     0 4px 12px rgba(0, 0, 0, 0.10);
+  --text:            #1c1c1c;
+  --text2:           rgba(28, 28, 28, 0.82);
+  --text3:           #6b6560;
+  --danger:          #c0392b;
+  --danger-dim:      rgba(192, 57, 43, 0.08);
+  --shadow:          0 4px 20px rgba(0, 0, 0, 0.08);
+  --pattern-bg:      none;
+  --btn-primary-bg:  #1c1c1c;
+  --btn-primary-txt: #f5f0e4;
+  --btn-inset:       rgba(255,255,255,0.2) 0px 0.5px 0px 0px inset,
+                     rgba(0,0,0,0.2) 0px 0px 0px 0.5px inset,
+                     rgba(0,0,0,0.05) 0px 1px 2px 0px;
 }
 
-/* ── CYBERPUNK TERMINAL ── */
+/* ── LOVABLE NIGHT (cyber) ── */
 [data-theme="cyber"] {
-  --bg:          #0d0d1a;
-  --surface:     #111128;
-  --surface2:    #0f0f22;
-  --border:      rgba(139, 92, 246, 0.22);
-  --border2:     rgba(139, 92, 246, 0.08);
-  --accent:      #8b5cf6;
-  --accent-dim:  rgba(139, 92, 246, 0.10);
-  --accent-med:  rgba(139, 92, 246, 0.25);
-  --accent-glow: 0 0 8px rgba(139, 92, 246, 0.35);
-  --text:        #a78bfa;
-  --text2:       rgba(167, 139, 250, 0.55);
-  --text3:       rgba(167, 139, 250, 0.3);
-  --danger:      #ff4040;
-  --danger-dim:  rgba(255, 64, 64, 0.15);
-  --shadow:      0 4px 20px rgba(0, 0, 0, 0.65);
-  --pattern-bg:  repeating-linear-gradient(
-    90deg, transparent, transparent 40px,
-    rgba(140, 0, 255, 0.03) 40px, rgba(140, 0, 255, 0.03) 41px
-  );
+  --bg:              #1c1c1c;
+  --surface:         #242424;
+  --surface2:        #1e1e1e;
+  --border:          rgba(236, 234, 228, 0.18);
+  --border2:         rgba(236, 234, 228, 0.08);
+  --accent:          #f7f4ed;
+  --accent-dim:      rgba(247, 244, 237, 0.06);
+  --accent-med:      rgba(247, 244, 237, 0.18);
+  --accent-glow:     0 4px 12px rgba(0, 0, 0, 0.40);
+  --text:            #f7f4ed;
+  --text2:           rgba(247, 244, 237, 0.82);
+  --text3:           rgba(247, 244, 237, 0.45);
+  --danger:          #e55353;
+  --danger-dim:      rgba(229, 83, 83, 0.10);
+  --shadow:          0 4px 20px rgba(0, 0, 0, 0.40);
+  --pattern-bg:      none;
+  --btn-primary-bg:  #f7f4ed;
+  --btn-primary-txt: #1c1c1c;
+  --btn-inset:       rgba(255,255,255,0.10) 0px 0.5px 0px 0px inset,
+                     rgba(0,0,0,0.30) 0px 0px 0px 0.5px inset,
+                     rgba(0,0,0,0.20) 0px 1px 2px 0px;
 }
 
 /* ── RESET & BASE ── */
@@ -388,6 +393,18 @@ strong { font-weight: 600; }
   transition: all 0.15s;
 }
 .btn-ghost:hover { border-color: var(--accent-med); color: var(--text); }
+
+.btn-danger {
+  border: 1px solid rgba(255, 64, 64, 0.4);
+  color: var(--danger);
+  background: var(--danger-dim);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  padding: 5px 10px;
+  letter-spacing: 1px;
+  transition: all 0.15s;
+}
+.btn-danger:hover { border-color: var(--danger); box-shadow: 0 0 8px rgba(255, 64, 64, 0.3); }
 
 .tb-btn {
   border: 1px solid var(--border);
@@ -773,6 +790,17 @@ strong { font-weight: 600; }
 }
 .det-footer .btn-primary { flex: 1; }
 
+/* ── TAG ALL LIST ── */
+.tag-all-list {
+  display: block;
+  margin-top: 6px;
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.tag-all-list::-webkit-scrollbar { width: 3px; }
+.tag-all-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
 /* ── TAG FILTER TREE ── */
 .tag-category {
   border-bottom: 1px solid var(--border2);
@@ -791,7 +819,10 @@ strong { font-weight: 600; }
   align-items: center;
 }
 .tag-cat-header:hover { color: var(--text2); }
-.tag-cat-list { display: flex; flex-wrap: wrap; gap: 3px; }
+.tag-cat-cnt { color: var(--text3); font-size: 7px; margin-left: auto; margin-right: 4px; }
+.tag-cat-toggle { color: var(--text3); font-size: 9px; flex-shrink: 0; }
+.tag-cat-list { display: flex; flex-wrap: wrap; gap: 3px; padding-bottom: 4px; }
+.tag-cat-list.collapsed { display: none; }
 .ftag {
   border: 1px solid var(--border);
   color: var(--text2);
