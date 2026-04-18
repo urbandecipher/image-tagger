@@ -44,6 +44,9 @@ const state = {
 
   // Tagging job
   tagJobRunning: false,
+
+  // Tag tree
+  collapsedCategories: new Set(),
 };
 
 // ── API Helpers ───────────────────────────────
@@ -220,7 +223,7 @@ async function loadAllTags() {
     if (state.uncollectedMode) params.set('uncollected', 'true');
 
     const data = await GET(`/api/tags/all?${params}`);
-    state.allTagCounts = data.tags ?? [];
+    state.allTagCounts = Array.isArray(data) ? data : (data.tags ?? []);
   } catch {}
 }
 
@@ -235,7 +238,7 @@ async function loadGallery() {
     params.set('collection_id', state.currentCollectionId);
   if (state.uncollectedMode) params.set('uncollected', 'true');
   if (state.searchTags.length)
-    params.set('tags', state.searchTags.join(','));
+    params.set('query', state.searchTags.join(','));
 
   try {
     const data = await GET(`/api/images?${params}`);
@@ -620,45 +623,127 @@ function executeSearch(raw) {
 }
 
 // ── Tag Filter Tree ───────────────────────────
-const TAG_CATEGORIES = {
-  CHARACTER:  ['1girl','2girls','solo','multiple_girls','boy','1boy'],
-  HAIR:       ['long_hair','short_hair','twintails','ponytail','blonde_hair','brown_hair','black_hair','blue_hair','red_hair','white_hair','pink_hair','silver_hair'],
-  EXPRESSION: ['smile','open_mouth','blush','closed_eyes','tears','angry','serious','expressionless'],
-  OUTFIT:     ['dress','skirt','school_uniform','swimsuit','bikini','shirt','jacket','coat'],
-  SCENE:      ['outdoors','indoors','sky','ocean','forest','city','classroom','bedroom'],
-  QUALITY:    ['masterpiece','best_quality','highres','realistic','anime','detailed'],
-};
+const TAG_CATEGORIES = [
+  { id: 'character', label: '人物',
+    keys: ['1girl','2girls','3girls','4girls','5girls','6+girls','1boy','2boys','3boys','multiple girls','multiple boys','solo','couple','androgynous'] },
+  { id: 'hair', label: '髮型/髮色',
+    keys: ['hair','twintails','ponytail','braid','bun','bangs','ahoge','ringlets','bob cut','drill hair','hair down','hair up','hair between eyes'] },
+  { id: 'eyes', label: '眼睛',
+    keys: ['eyes','eye','pupil','iris','eyelash','eyebrow','wink','heterochromia','tsurime','tareme'] },
+  { id: 'expression', label: '表情',
+    keys: ['smile','grin','smirk','laugh','crying','tears','blush','angry','sad','serious','pout','open mouth','closed eyes','half-closed eyes','tongue out','expressionless','surprised','embarrassed'] },
+  { id: 'outfit', label: '服裝',
+    keys: ['dress','skirt','shirt','jacket','coat','uniform','swimsuit','bikini','pants','shorts','hoodie','sweater','gloves','socks','stockings','boots','shoes','sandals','hat','cap','headband','ribbon','bow','collar','apron','vest','cloak','robe','bra','thighhighs','leotard','armor','kimono','yukata','maid','nurse','sailor','lingerie','underwear','choker','necktie','scarf'] },
+  { id: 'body', label: '體型/身體',
+    keys: ['breast','chest','navel','belly','stomach','waist','hips','thigh','barefoot','bare shoulders','bare back','abs','muscle','nude','naked','topless','skin'] },
+  { id: 'pose', label: '姿勢/動作',
+    keys: ['sitting','standing','lying','running','walking','jumping','kneeling','floating','leaning','bending','holding','hugging','kissing','dancing','looking at viewer','looking back','from behind','from above','from below','arms up','on back','on stomach','outstretched arms','spread arms','reaching out'] },
+  { id: 'scene', label: '場景',
+    keys: ['outdoors','indoors','sky','ocean','sea','beach','forest','city','street','building','classroom','bedroom','kitchen','bathroom','park','garden','mountain','snow','rain','scenery','landscape','grass','cloud','tree','water','river','lake','ruins','shrine','temple','field','night sky'] },
+  { id: 'lighting', label: '光照',
+    keys: ['sunlight','moonlight','candlelight','sunset','sunrise','neon','rim light','backlight','spotlight','sparkle','reflection','bokeh','depth of field','glowing','fire','lens flare','bloom','light rays','dark background','white background','gradient background','simple background','starry sky'] },
+  { id: 'camera', label: '鏡頭/構圖',
+    keys: ['close-up','full body','upper body','lower body','cowboy shot','bust shot','portrait','dutch angle','from side','pov','fisheye','wide shot','face focus','head focus','torso shot'] },
+  { id: 'quality', label: '畫質',
+    keys: ['masterpiece','best quality','highres','ultra-detailed','detailed','absurdres','intricate','sharp focus','blurry','noisy','8k','4k','high quality','extremely detailed'] },
+  { id: 'style', label: '風格',
+    keys: ['realistic','anime','cartoon','digital art','oil painting','watercolor','sketch','line art','flat color','photorealistic','cel shading','chibi','pixel art','illustration','painting','rendered','3d'] },
+];
+
+// word-boundary match: keyword must appear as whole word(s) within tag
+function tagBelongsTo(tag, keys) {
+  const t = tag.toLowerCase();
+  return keys.some(k => {
+    const kl = k.toLowerCase();
+    if (t === kl) return true;
+    const idx = t.indexOf(kl);
+    if (idx === -1) return false;
+    const before = idx === 0 || t[idx - 1] === ' ';
+    const after  = idx + kl.length === t.length || t[idx + kl.length] === ' ';
+    return before && after;
+  });
+}
 
 function buildTagTree() {
-  const treeEl = document.getElementById('tagTree');
-  treeEl.innerHTML = '';
+  const listEl = document.getElementById('tagAllList');
+  if (!listEl) return;
+  listEl.innerHTML = '';
 
-  Object.entries(TAG_CATEGORIES).forEach(([cat, defaultTags]) => {
-    const catTags = state.allTagCounts
-      .filter(t => defaultTags.includes(t.tag))
-      .slice(0, 12);
+  const query = (document.getElementById('tagSearchInput')?.value ?? '').toLowerCase().trim();
+  const badge = document.getElementById('tagCountBadge');
+  if (badge) badge.textContent = state.allTagCounts.length;
 
-    if (!catTags.length) return;
+  // 分配 tags 至各 category（先到先得，避免重複）
+  const assigned = new Set();
+  const catData = TAG_CATEGORIES.map(cat => {
+    let tags = state.allTagCounts.filter(t => {
+      if (assigned.has(t.tag)) return false;
+      return tagBelongsTo(t.tag, cat.keys);
+    });
+    tags.forEach(t => assigned.add(t.tag));
+    if (query) tags = tags.filter(t => t.tag.includes(query));
+    return { ...cat, tags };
+  });
 
+  // 未分類的 tags 歸入「其他」
+  let otherTags = state.allTagCounts.filter(t => !assigned.has(t.tag));
+  if (query) otherTags = otherTags.filter(t => t.tag.includes(query));
+  if (otherTags.length) catData.push({ id: 'other', label: '其他', tags: otherTags });
+
+  catData.forEach(cat => {
+    if (!cat.tags.length) return;
+
+    const isCollapsed = state.collapsedCategories.has(cat.id);
     const section = document.createElement('div');
     section.className = 'tag-category';
-    section.innerHTML = `
-      <div class="tag-cat-header">${cat} <span>▾</span></div>
-      <div class="tag-cat-list">
-        ${catTags.map(t => `
-          <div class="ftag${state.searchTags.includes(t.tag) ? ' active' : ''}"
-               data-tag="${t.tag}">
-            ${t.tag} <span class="ftag-cnt">${t.count}</span>
-          </div>
-        `).join('')}
-      </div>
-    `;
 
-    section.querySelectorAll('.ftag').forEach(ftag => {
-      ftag.addEventListener('click', () => toggleFilterTag(ftag.dataset.tag, ftag));
+    // header
+    const header = document.createElement('div');
+    header.className = 'tag-cat-header';
+    const labelSpan = document.createElement('span');
+    labelSpan.textContent = cat.label;
+    const cntSpan = document.createElement('span');
+    cntSpan.className = 'tag-cat-cnt';
+    cntSpan.textContent = cat.tags.length;
+    const toggleSpan = document.createElement('span');
+    toggleSpan.className = 'tag-cat-toggle';
+    toggleSpan.textContent = isCollapsed ? '▸' : '▾';
+    header.appendChild(labelSpan);
+    header.appendChild(cntSpan);
+    header.appendChild(toggleSpan);
+
+    // tag list
+    const tagList = document.createElement('div');
+    tagList.className = 'tag-cat-list' + (isCollapsed ? ' collapsed' : '');
+
+    cat.tags.forEach(t => {
+      const el = document.createElement('div');
+      el.className = 'ftag' + (state.searchTags.includes(t.tag) ? ' active' : '');
+      el.dataset.tag = t.tag;
+      el.textContent = t.tag;
+      const cnt = document.createElement('span');
+      cnt.className = 'ftag-cnt';
+      cnt.textContent = t.count;
+      el.appendChild(cnt);
+      el.addEventListener('click', () => toggleFilterTag(t.tag, el));
+      tagList.appendChild(el);
     });
 
-    treeEl.appendChild(section);
+    header.addEventListener('click', () => {
+      if (state.collapsedCategories.has(cat.id)) {
+        state.collapsedCategories.delete(cat.id);
+        tagList.classList.remove('collapsed');
+        toggleSpan.textContent = '▾';
+      } else {
+        state.collapsedCategories.add(cat.id);
+        tagList.classList.add('collapsed');
+        toggleSpan.textContent = '▸';
+      }
+    });
+
+    section.appendChild(header);
+    section.appendChild(tagList);
+    listEl.appendChild(section);
   });
 }
 
@@ -863,6 +948,32 @@ function bindDetPanelEvents() {
 
   document.getElementById('detBtnSave').addEventListener('click', saveDetPanel);
 
+  document.getElementById('detBtnDelete').addEventListener('click', async () => {
+    if (state.detImageId === null) return;
+    if (!confirm('刪除這張圖片？此操作不可還原。')) return;
+
+    // 先記下相鄰圖片
+    const cards = [...document.querySelectorAll('.card')];
+    const curIdx = cards.findIndex(c => Number(c.dataset.id) === state.detImageId);
+    const nextCard = cards[curIdx + 1] ?? cards[curIdx - 1] ?? null;
+    const nextId = nextCard ? Number(nextCard.dataset.id) : null;
+
+    try {
+      await DEL('/api/image', { image_id: state.detImageId });
+      state.detImageId = null;
+      toast('已刪除');
+      loadGallery();
+      loadStats();
+      if (nextId !== null) {
+        openDetailPanel(nextId);
+      } else {
+        document.getElementById('detPanel').classList.add('hidden');
+      }
+    } catch {
+      toast('刪除失敗', 'error');
+    }
+  });
+
   document.getElementById('detBtnReveal').addEventListener('click', async () => {
     if (state.detImageId === null) return;
     try { await GET(`/api/reveal/${state.detImageId}`); } catch {}
@@ -939,6 +1050,8 @@ function bindSidebarEvents() {
     state.currentPage = 1;
     loadGallery();
   });
+
+  document.getElementById('tagSearchInput').addEventListener('input', () => buildTagTree());
 }
 
 // ── Scan ──────────────────────────────────────
@@ -1131,17 +1244,14 @@ function bindAddCollectionEvent() {
 }
 
 function bindEvents() {
-  bindThemeEvents();
-  bindSidebarEvents();
-  bindScanEvents();
-  bindSearchEvents();
-  bindFilterClearEvent();
-  bindContextMenu();
-  bindDetPanelEvents();
-  bindBulkEvents();
-  bindLasso();
-  bindKeyboardShortcuts();
-  bindAddCollectionEvent();
+  [
+    bindThemeEvents, bindSidebarEvents, bindScanEvents, bindSearchEvents,
+    bindFilterClearEvent, bindContextMenu, bindDetPanelEvents, bindBulkEvents,
+    bindLasso, bindKeyboardShortcuts, bindAddCollectionEvent,
+  ].forEach(fn => {
+    try { fn(); }
+    catch (e) { console.error(`[bindEvents] ${fn.name}:`, e); }
+  });
 }
 
 // ── Init ──────────────────────────────────────
@@ -1151,7 +1261,7 @@ async function init() {
   await loadCollections();
   await loadAllTags();
   await loadGallery();
-  buildTagTree();
+  try { buildTagTree(); } catch(e) { console.warn('buildTagTree error', e); }
   bindEvents();
 }
 
