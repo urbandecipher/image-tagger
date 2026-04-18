@@ -804,6 +804,7 @@ strong { font-weight: 600; }
   flex-shrink: 0;
   max-height: 130px;
   overflow-y: auto;
+  margin-top: -1px;
 }
 .das-item {
   display: flex;
