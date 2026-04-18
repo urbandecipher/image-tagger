@@ -117,7 +117,7 @@ input, select {
 
 input:focus, select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-dim);
+  box-shadow: 0 0 0 2px var(--accent-med);
 }
 
 strong { font-weight: 600; }
@@ -269,7 +269,7 @@ strong { font-weight: 600; }
 }
 .sb-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-dim);
+  box-shadow: 0 0 0 2px var(--accent-med);
   outline: none;
 }
 
@@ -282,7 +282,11 @@ strong { font-weight: 600; }
   background: var(--bg);
   color: var(--text);
 }
-.sb-select:focus { border-color: var(--accent); outline: none; }
+.sb-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-med);
+  outline: none;
+}
 
 .btn-row { display: flex; gap: 6px; }
 
