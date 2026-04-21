@@ -9,7 +9,7 @@ from pathlib import Path
 DB_PATH = "tags.db"
 
 if not Path(DB_PATH).exists():
-    print("❌ 找不到 tags.db，請確認在 image-tagger 資料夾內執行")
+    print("❌ 找不到 tags.db，請確認在 TagMind 資料夾內執行")
     exit(1)
 
 conn = sqlite3.connect(DB_PATH)

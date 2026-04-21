@@ -60,7 +60,7 @@ class WDTagger:
         import onnxruntime as ort
         model_path = str(LOCAL_DIR / MODEL_FILENAME)
 
-        print("⚠️  使用 CPU 模式（日後安裝 CUDA 12 可切換 GPU 加速）")
+        print("[INFO] CPU mode (install CUDA 12 to enable GPU)")
         self.session = ort.InferenceSession(
             model_path, providers=["CPUExecutionProvider"]
         )

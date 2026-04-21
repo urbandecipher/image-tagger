@@ -47,6 +47,9 @@ const state = {
 
   // Tag tree
   collapsedCategories: new Set(),
+
+  // Chart
+  chartDrillCategory: null,
 };
 
 // ── API Helpers ───────────────────────────────
@@ -83,7 +86,6 @@ const THEME_LABELS = {
 function applyTheme(theme) {
   state.theme = theme;
   document.documentElement.setAttribute('data-theme', theme);
-  document.getElementById('themeLabel').textContent = THEME_LABELS[theme] || theme;
   document.querySelectorAll('.theme-card').forEach(c => {
     c.classList.toggle('active', c.dataset.theme === theme);
   });
@@ -100,26 +102,9 @@ function saveTheme(theme) {
 }
 
 function bindThemeEvents() {
-  const switcher = document.getElementById('themeSwitcher');
-  const menu     = document.getElementById('themeMenu');
-
-  switcher.addEventListener('click', (e) => {
-    e.stopPropagation();
-    menu.classList.toggle('hidden');
-  });
-
-  document.querySelectorAll('.theme-option').forEach(opt => {
-    opt.addEventListener('click', () => {
-      saveTheme(opt.dataset.theme);
-      menu.classList.add('hidden');
-    });
-  });
-
   document.querySelectorAll('.theme-card').forEach(card => {
     card.addEventListener('click', () => saveTheme(card.dataset.theme));
   });
-
-  document.addEventListener('click', () => menu.classList.add('hidden'));
 }
 
 // ── Config Load ───────────────────────────────
@@ -619,7 +604,34 @@ function executeSearch(raw) {
   state.searchTags  = include;
   state.excludeTags = exclude;
   state.currentPage = 1;
+  updateFilterSummary();
+  updateTagSelectedBadge();
   loadGallery();
+  buildTagTree();
+  syncChartIfOpen();
+}
+
+function syncChartIfOpen() {
+  const modal = document.getElementById('chartModal');
+  if (modal && !modal.classList.contains('hidden')) {
+    buildSunburstChart();
+    renderChartActiveTags();
+  }
+}
+
+function updateTagSelectedBadge() {
+  const badge = document.getElementById('tagSelectedBadge');
+  const btn   = document.getElementById('btnClearTagSel');
+  if (!badge || !btn) return;
+  const n = state.searchTags.length;
+  if (n > 0) {
+    badge.textContent = n;
+    badge.classList.remove('hidden');
+    btn.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+    btn.classList.add('hidden');
+  }
 }
 
 // ── Tag Filter Tree ───────────────────────────
@@ -747,6 +759,302 @@ function buildTagTree() {
   });
 }
 
+// ── Sunburst Chart ────────────────────────────
+const CHART_PALETTE = [
+  '#7eb8e8','#7cc4a0','#f0a070','#d88ec8','#94c8e0',
+  '#e8c86a','#a8c090','#e89890','#88b8d8','#c8a8e8',
+  '#98d8c8','#d8b870','#b8d898'
+];
+
+function getChartCatData() {
+  const assigned = new Set();
+  const cats = TAG_CATEGORIES.map((cat, i) => {
+    const tags = state.allTagCounts.filter(t => {
+      if (assigned.has(t.tag)) return false;
+      return tagBelongsTo(t.tag, cat.keys);
+    });
+    tags.forEach(t => assigned.add(t.tag));
+    return { ...cat, tags, color: CHART_PALETTE[i % CHART_PALETTE.length] };
+  }).filter(c => c.tags.length > 0);
+  const otherTags = state.allTagCounts.filter(t => !assigned.has(t.tag));
+  if (otherTags.length) cats.push({
+    id: 'other', label: '其他', tags: otherTags,
+    color: CHART_PALETTE[cats.length % CHART_PALETTE.length]
+  });
+  return cats;
+}
+
+function buildSunburstChart() {
+  const wrap = document.getElementById('tagChartWrap');
+  if (!wrap || wrap.classList.contains('hidden')) return;
+  wrap.innerHTML = '';
+  if (!state.allTagCounts.length) return;
+
+  const catData = getChartCatData();
+  const drillCat = state.chartDrillCategory
+    ? catData.find(c => c.id === state.chartDrillCategory) : null;
+  const displayCats = drillCat ? [drillCat] : catData;
+  const grandTotal = displayCats.reduce((s, c) =>
+    s + c.tags.reduce((ts, t) => ts + t.count, 0), 0) || 1;
+
+  const W = 500, cx = W / 2, cy = W / 2;
+  const innerR = 88, midR = 188, outerR = 228;
+  const ns = 'http://www.w3.org/2000/svg';
+
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '100%');
+  svg.setAttribute('viewBox', `0 0 ${W} ${W}`);
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  svg.style.cssText = 'display:block;overflow:visible;';
+
+  function pt(r, a) { return [cx + r * Math.cos(a), cy + r * Math.sin(a)]; }
+
+  function arcPath(r1, r2, a1, a2) {
+    const span = a2 - a1;
+    if (span >= Math.PI * 2 - 0.001) {
+      const [ax, ay] = pt(r1, a1); const [bx, by] = pt(r2, a1);
+      const [cx2, cy2] = pt(r2, a1 + Math.PI); const [dx, dy] = pt(r1, a1 + Math.PI);
+      return `M${ax},${ay} L${bx},${by} A${r2},${r2} 0 1,1 ${cx2},${cy2} A${r2},${r2} 0 1,1 ${bx},${by} Z`;
+    }
+    const lg = span > Math.PI ? 1 : 0;
+    const [x1,y1]=pt(r1,a1),[x2,y2]=pt(r2,a1),[x3,y3]=pt(r2,a2),[x4,y4]=pt(r1,a2);
+    return `M${x1},${y1} L${x2},${y2} A${r2},${r2} 0 ${lg},1 ${x3},${y3} L${x4},${y4} A${r1},${r1} 0 ${lg},0 ${x1},${y1} Z`;
+  }
+
+  function mkEl(tag, attrs) {
+    const el = document.createElementNS(ns, tag);
+    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+    return el;
+  }
+
+  let startAngle = -Math.PI / 2;
+
+  displayCats.forEach(cat => {
+    const catTotal = cat.tags.reduce((s, t) => s + t.count, 0) || 1;
+    const catAngle = (catTotal / grandTotal) * Math.PI * 2;
+    const endAngle = startAngle + catAngle;
+    const midAng = (startAngle + endAngle) / 2;
+    const isActive = state.chartDrillCategory === cat.id;
+
+    // Inner ring arc
+    const inner = mkEl('path', {
+      d: arcPath(innerR, midR, startAngle, endAngle),
+      fill: cat.color, 'fill-opacity': isActive ? '0.9' : '0.7',
+      stroke: 'var(--bg)', 'stroke-width': '1.5'
+    });
+    inner.style.cursor = 'pointer';
+    inner.addEventListener('mouseenter', () => inner.setAttribute('fill-opacity', '1'));
+    inner.addEventListener('mouseleave', () => inner.setAttribute('fill-opacity', isActive ? '0.9' : '0.7'));
+    inner.addEventListener('click', e => {
+      e.stopPropagation();
+      state.chartDrillCategory = isActive ? null : cat.id;
+      buildSunburstChart();
+      buildChartLegend();
+    });
+    svg.appendChild(inner);
+
+    // Category label
+    if (catAngle > 0.22) {
+      const lr = (innerR + midR) / 2;
+      const [lx, ly] = pt(lr, midAng);
+      svg.appendChild(mkEl('text', {
+        x: lx, y: ly, 'text-anchor': 'middle', 'dominant-baseline': 'middle',
+        'font-size': catAngle > 0.55 ? '18' : '14', 'font-weight': '600',
+        fill: '#fff', 'pointer-events': 'none'
+      })).textContent = cat.label;
+    }
+
+    // Outer ring: tag arcs
+    const showTags = drillCat
+      ? cat.tags
+      : cat.tags.slice(0, Math.max(3, Math.ceil(catAngle / (Math.PI * 2) * 45)));
+    const tagTotalW = showTags.reduce((s, t) => s + t.count, 0) || 1;
+    let tagStart = startAngle;
+
+    showTags.forEach(t => {
+      const tagAngle = (t.count / tagTotalW) * catAngle;
+      const tagEnd = tagStart + tagAngle;
+      if (tagAngle < 0.01) { tagStart = tagEnd; return; }
+
+      const active = state.searchTags.includes(t.tag);
+      const baseOp = active ? '1' : '0.38';
+      const outer = mkEl('path', {
+        d: arcPath(midR + 2, outerR, tagStart, tagEnd),
+        fill: cat.color, 'fill-opacity': baseOp,
+        stroke: 'var(--bg)', 'stroke-width': '0.8'
+      });
+      outer.style.cursor = 'pointer';
+      outer.dataset.tag = t.tag;
+      outer.dataset.baseOp = baseOp;
+      outer.addEventListener('mouseenter', () => {
+        outer.setAttribute('fill-opacity', '0.9');
+        showChartTooltip(t.tag, t.count, active);
+      });
+      outer.addEventListener('mouseleave', () => {
+        outer.setAttribute('fill-opacity', outer.dataset.baseOp);
+        hideChartTooltip();
+      });
+      outer.addEventListener('click', e => { e.stopPropagation(); toggleChartTag(t.tag); });
+      svg.appendChild(outer);
+      tagStart = tagEnd;
+    });
+
+    startAngle = endAngle;
+  });
+
+  // Center circle
+  const bg = mkEl('circle', {
+    cx, cy, r: innerR - 4,
+    fill: 'var(--surface2)', stroke: 'var(--border)', 'stroke-width': '2'
+  });
+  if (drillCat) {
+    bg.style.cursor = 'pointer';
+    bg.addEventListener('click', () => { state.chartDrillCategory = null; buildSunburstChart(); buildChartLegend(); });
+  }
+  svg.appendChild(bg);
+
+  // Center text
+  const ct = mkEl('text', { x: cx, y: cy, 'text-anchor': 'middle', 'pointer-events': 'none' });
+  if (drillCat) {
+    const t1 = mkEl('tspan', { x: cx, dy: '-14', 'font-size': '16', fill: 'var(--text3)' });
+    t1.textContent = '↩ 返回';
+    const t2 = mkEl('tspan', { x: cx, dy: '28', 'font-size': '22', 'font-weight': '700', fill: 'var(--text)' });
+    t2.textContent = drillCat.label;
+    ct.appendChild(t1); ct.appendChild(t2);
+  } else {
+    const t1 = mkEl('tspan', { x: cx, dy: '-14', 'font-size': '36', 'font-weight': '700', fill: 'var(--text)' });
+    t1.textContent = state.allTagCounts.length;
+    const t2 = mkEl('tspan', { x: cx, dy: '28', 'font-size': '18', fill: 'var(--text3)' });
+    t2.textContent = 'TAGS';
+    ct.appendChild(t1); ct.appendChild(t2);
+  }
+  svg.appendChild(ct);
+  wrap.appendChild(svg);
+}
+
+function toggleChartTag(tag) {
+  const idx = state.searchTags.indexOf(tag);
+  if (idx >= 0) state.searchTags.splice(idx, 1);
+  else { state.searchTags.push(tag); state.excludeTags = []; }
+  updateFilterSummary();
+  updateTagSelectedBadge();
+  state.currentPage = 1;
+  loadGallery();
+  document.querySelectorAll('#tagChartWrap path[data-tag]').forEach(p => {
+    const op = state.searchTags.includes(p.dataset.tag) ? '1' : '0.38';
+    p.dataset.baseOp = op;
+    p.setAttribute('fill-opacity', op);
+  });
+  renderChartActiveTags();
+  buildTagTree();
+}
+
+let _chartTip = null;
+function showChartTooltip(tag, count, isActive) {
+  if (!_chartTip) {
+    _chartTip = document.createElement('div');
+    _chartTip.style.cssText = 'position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text);pointer-events:none;z-index:999;box-shadow:var(--shadow);white-space:nowrap;';
+    document.body.appendChild(_chartTip);
+  }
+  _chartTip.textContent = `${tag}  ×${count}${isActive ? '  ✓' : ''}`;
+  _chartTip.style.display = 'block';
+}
+function hideChartTooltip() { if (_chartTip) _chartTip.style.display = 'none'; }
+document.addEventListener('mousemove', e => {
+  if (_chartTip && _chartTip.style.display !== 'none') {
+    _chartTip.style.left = (e.clientX + 14) + 'px';
+    _chartTip.style.top  = (e.clientY - 8)  + 'px';
+  }
+});
+
+function openChartModal() {
+  try {
+    const modal = document.getElementById('chartModal');
+    if (!modal) { console.error('[Chart] chartModal element not found'); return; }
+    modal.classList.remove('hidden');
+    buildSunburstChart();
+    buildChartLegend();
+    renderChartActiveTags();
+  } catch(e) {
+    console.error('[Chart] openChartModal failed:', e);
+  }
+}
+
+function closeChartModal() {
+  document.getElementById('chartModal').classList.add('hidden');
+  state.chartDrillCategory = null;
+}
+
+function buildChartLegend() {
+  const el = document.getElementById('chartLegend');
+  if (!el) return;
+  el.innerHTML = '';
+  const cats = getChartCatData();
+  cats.forEach(cat => {
+    const item = document.createElement('div');
+    item.className = 'chart-legend-item' + (state.chartDrillCategory === cat.id ? ' active' : '');
+    item.innerHTML = `<span class="chart-legend-dot" style="background:${cat.color}"></span><span>${cat.label}</span><span class="chart-legend-cnt">${cat.tags.length}</span>`;
+    item.addEventListener('click', () => {
+      state.chartDrillCategory = state.chartDrillCategory === cat.id ? null : cat.id;
+      buildSunburstChart();
+      buildChartLegend();
+    });
+    el.appendChild(item);
+  });
+}
+
+function renderChartActiveTags() {
+  const el = document.getElementById('chartActiveTags');
+  if (!el) return;
+  el.innerHTML = '';
+  if (!state.searchTags.length) {
+    el.innerHTML = '<span style="font-size:11px;color:var(--text3);">— 無 —</span>';
+    return;
+  }
+  state.searchTags.forEach(tag => {
+    const chip = document.createElement('div');
+    chip.className = 'chart-atag';
+    chip.innerHTML = `<span>${tag}</span><span class="chart-atag-x">✕</span>`;
+    chip.addEventListener('click', () => {
+      state.searchTags.splice(state.searchTags.indexOf(tag), 1);
+      updateFilterSummary();
+      updateTagSelectedBadge();
+      state.currentPage = 1;
+      loadGallery();
+      buildSunburstChart();
+      renderChartActiveTags();
+      buildTagTree();
+    });
+    el.appendChild(chip);
+  });
+}
+
+function bindTagChartToggle() {
+  const btn = document.getElementById('btnTagChart');
+  if (!btn) { console.error('[Chart] btnTagChart not found'); return; }
+  btn.addEventListener('click', openChartModal);
+  console.log('[Chart] btnTagChart listener bound');
+
+  document.getElementById('chartModalClose').addEventListener('click', closeChartModal);
+  document.getElementById('chartModal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeChartModal();
+  });
+  document.getElementById('chartClearBtn').addEventListener('click', () => {
+    state.searchTags = [];
+    state.excludeTags = [];
+    document.getElementById('searchInput').value = '';
+    document.querySelectorAll('.ftag.active').forEach(f => f.classList.remove('active'));
+    updateFilterSummary();
+    updateTagSelectedBadge();
+    state.currentPage = 1;
+    loadGallery();
+    buildSunburstChart();
+    renderChartActiveTags();
+  });
+  document.getElementById('chartApplyBtn').addEventListener('click', closeChartModal);
+}
+
 function toggleFilterTag(tag, el) {
   const idx = state.searchTags.indexOf(tag);
   if (idx >= 0) {
@@ -758,8 +1066,10 @@ function toggleFilterTag(tag, el) {
     el.classList.add('active');
   }
   updateFilterSummary();
+  updateTagSelectedBadge();
   state.currentPage = 1;
   loadGallery();
+  syncChartIfOpen();
 }
 
 function updateFilterSummary() {
@@ -778,16 +1088,22 @@ function updateFilterSummary() {
   }
 }
 
+function clearAllTagFilters() {
+  state.searchTags  = [];
+  state.excludeTags = [];
+  document.getElementById('searchInput').value = '';
+  document.querySelectorAll('.ftag.active').forEach(f => f.classList.remove('active'));
+  updateFilterSummary();
+  updateTagSelectedBadge();
+  state.currentPage = 1;
+  loadGallery();
+  buildTagTree();
+  syncChartIfOpen();
+}
+
 function bindFilterClearEvent() {
-  document.getElementById('btnClearFilter').addEventListener('click', () => {
-    state.searchTags  = [];
-    state.excludeTags = [];
-    document.getElementById('searchInput').value = '';
-    document.querySelectorAll('.ftag.active').forEach(f => f.classList.remove('active'));
-    updateFilterSummary();
-    state.currentPage = 1;
-    loadGallery();
-  });
+  document.getElementById('btnClearFilter').addEventListener('click', clearAllTagFilters);
+  document.getElementById('btnClearTagSel').addEventListener('click', clearAllTagFilters);
 }
 
 // ── Detail Panel ──────────────────────────────
@@ -1246,8 +1562,8 @@ function bindAddCollectionEvent() {
 function bindEvents() {
   [
     bindThemeEvents, bindSidebarEvents, bindScanEvents, bindSearchEvents,
-    bindFilterClearEvent, bindContextMenu, bindDetPanelEvents, bindBulkEvents,
-    bindLasso, bindKeyboardShortcuts, bindAddCollectionEvent,
+    bindFilterClearEvent, bindTagChartToggle, bindContextMenu, bindDetPanelEvents,
+    bindBulkEvents, bindLasso, bindKeyboardShortcuts, bindAddCollectionEvent,
   ].forEach(fn => {
     try { fn(); }
     catch (e) { console.error(`[bindEvents] ${fn.name}:`, e); }

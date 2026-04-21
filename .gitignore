@@ -4,6 +4,10 @@ config.json
 thumbnails/
 models/
 
+# 開發工具內部檔案
+.superpowers/
+docs/superpowers/
+
 # Python
 __pycache__/
 *.py[cod]

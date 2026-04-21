@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from database import Database
 from tagger import WDTagger
 
-app = FastAPI(title="Image Tagger")
+app = FastAPI(title="TagMind")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 db = Database("tags.db")
 tagger = WDTagger()
@@ -367,12 +367,12 @@ async def run_tagging_job(folder: str, threshold: float, batch_size: int):
 if __name__ == "__main__":
     db.init()
     tagger.load()
-    print("✅ WD-Tagger 模型載入完成")
-    print("🌐 http://localhost:8000")
+    print("[OK] WD-Tagger ready")
+    print("[>] http://localhost:8000")
 
     def open_browser():
         import time
-        time.sleep(1.5)
+        time.sleep(2.5)
         webbrowser.open("http://localhost:8000")
 
     threading.Thread(target=open_browser, daemon=True).start()

@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Image Tag Studio</title>
+  <title>TagMind</title>
   <link rel="icon" href="/static/icon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300..800&display=swap">
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style.css?v=4">
 </head>
 <body>
 
@@ -24,14 +24,6 @@
       <span class="stat">COLLECTIONS <strong id="statCols">0</strong></span>
     </div>
     <div class="hdr-right">
-      <button class="theme-switcher" id="themeSwitcher" title="切換主題">
-        <span id="themeLabel">⊙ TACTICAL</span>
-      </button>
-      <div class="theme-menu hidden" id="themeMenu">
-        <div class="theme-option" data-theme="tactical">■ TACTICAL RADAR</div>
-        <div class="theme-option" data-theme="hud">◈ DEATH STRANDING HUD</div>
-        <div class="theme-option" data-theme="cyber">▶ CYBERPUNK TERMINAL</div>
-      </div>
       <button class="btn-primary" id="btnScanHeader">SCAN ＋</button>
     </div>
     <!-- 打標進度條 (頂部 2px) -->
@@ -64,7 +56,14 @@
           <input type="range" class="conf-slider" id="confSlider" min="0.1" max="0.9" step="0.05" value="0.35">
         </div>
         <div class="sb-section sb-tag-tree">
-          <div class="sb-label">ALL TAGS // <span id="tagCountBadge">0</span></div>
+          <div class="sb-label-row">
+            <span class="sb-label">ALL TAGS // <span id="tagCountBadge">0</span></span>
+            <div class="sb-label-row-actions">
+              <span class="sb-sel-badge hidden" id="tagSelectedBadge">0</span>
+              <button class="sb-clear-sel hidden" id="btnClearTagSel" title="清除篩選 tag">✕</button>
+              <button class="sb-chart-toggle" id="btnTagChart" title="圖表視覺化">⊛</button>
+            </div>
+          </div>
           <input type="text" class="sb-input" id="tagSearchInput" placeholder="搜尋 tag...">
           <div class="tag-all-list" id="tagAllList">
             <!-- 由 JS 動態注入 -->
@@ -149,9 +148,7 @@
           <button class="tb-btn" id="btnBulkTagEdit">TAG BATCH</button>
           <button class="tb-btn tb-btn-cancel" id="btnCancelSelect">✕</button>
         </div>
-        <div class="tb-right">
-          <button class="tb-btn" id="btnAnalytics" title="數據分析">📊</button>
-        </div>
+        <div class="tb-right"></div>
       </div>
 
       <!-- COLLECTION TABS -->
@@ -204,6 +201,33 @@
   <!-- MODALS -->
   <div class="modal-overlay hidden" id="modalOverlay"></div>
 
+  <!-- Chart Modal -->
+  <div class="chart-modal hidden" id="chartModal">
+    <div class="chart-modal-inner">
+      <div class="chart-modal-hdr">
+        <span class="chart-modal-title">⊛ TAG CHART</span>
+        <div class="chart-modal-hdr-right">
+          <span class="chart-modal-hint" id="chartHint">點擊內圈鑽探類別 · 點擊外圈篩選 tag</span>
+          <button class="chart-modal-close" id="chartModalClose">✕</button>
+        </div>
+      </div>
+      <div class="chart-modal-body">
+        <div class="chart-svg-wrap" id="tagChartWrap"></div>
+        <div class="chart-sidebar">
+          <div class="chart-sb-label">ACTIVE FILTERS</div>
+          <div class="chart-active-tags" id="chartActiveTags"></div>
+          <div class="chart-sb-sep"></div>
+          <div class="chart-sb-label">CATEGORY</div>
+          <div class="chart-legend" id="chartLegend"></div>
+          <div class="chart-modal-footer">
+            <button class="btn-ghost" id="chartClearBtn">✕ CLEAR ALL</button>
+            <button class="btn-primary" id="chartApplyBtn">APPLY</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- 掃描歷史 Modal -->
   <div class="modal-dialog hidden" id="historyModal">
     <div class="modal-header">
@@ -230,6 +254,6 @@
   <!-- Toast -->
   <div class="toast-container" id="toastContainer"></div>
 
-  <script src="/static/app.js?v=4"></script>
+  <script src="/static/app.js?v=9"></script>
 </body>
 </html>
